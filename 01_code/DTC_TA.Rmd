@@ -1,0 +1,76 @@
+---
+title: "Data Translation Project"
+author: "Andrew Nalundasan"
+date: "August 27, 2021"   
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r echo = FALSE}
+# Course: OMSBA 5210, Seattle University
+# Purpose: DTC Technical Appendix
+# Date: August 27th, 2021
+# Author: Andrew Nalundasan
+
+```
+
+# Load Libraries
+
+```{r message=FALSE, include=FALSE}
+library(tidyverse)     # contains ggplot2, dplyr, and several other packages
+library(ggannotate)    # annotation tool
+library(gridExtra)     # use to put graphs together in the same frame
+library(janitor)       # contains tidyverse functions for cross-tables
+library(knitr)         # contains some table formatting functions
+library(GGally)        # contains a custom correlation plot
+library(scales)        # to get $ and , on axis in graph
+library(corrplot)      # used for correlation plot with good looks below
+library(tidyr)         # tidy r
+library(kableExtra)    # extra kable formatting
+library(vtable)        # NHK special
+library(gghighlight)   # visual formatting - highlights
+library(agricolae)     # for statistical testing
+library(huxtable)      # table formatting
+library(jtools)        # export summs table
+library(car)           # linear hypothesis
+
+```
+
+
+
+# Load and Transform Data
+
+```{r}
+# read data into environment and assign to variable
+soccer <- read_csv("../02_raw_data/Seattle_Reign.csv")
+
+# create new column for 'company' for each cereal company
+soccer <- soccer %>% 
+  mutate(Interest = str_replace_all(Interest, "I have a small amount of interest", "1")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I consider myself to be a low-level fan of this team", "2")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I consider myself to be a moderate fan of this team", "3")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I consider myself to be a loyal fan of this team", "4")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I live and die with this team", "5")) %>% 
+  mutate(Interest = as.factor(Interest))
+                                    
+
+```
+
+
+
+
+
+
+
+
+
+
+
