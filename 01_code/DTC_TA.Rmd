@@ -49,21 +49,56 @@ library(car)           # linear hypothesis
 # Load and Transform Data
 
 ```{r}
-# read data into environment and assign to variable
-soccer <- read_csv("../02_raw_data/Seattle_Reign.csv")
+# read data into environment and assign to object
+soccer_og <- read_csv("../02_raw_data/Seattle_Reign.csv")
 
-# create new column for 'company' for each cereal company
-soccer <- soccer %>% 
+# transform Interest responses to numeric
+soccer_updates <- soccer_og %>% 
   mutate(Interest = str_replace_all(Interest, "I have a small amount of interest", "1")) %>% 
   mutate(Interest = str_replace_all(Interest, "I consider myself to be a low-level fan of this team", "2")) %>% 
   mutate(Interest = str_replace_all(Interest, "I consider myself to be a moderate fan of this team", "3")) %>% 
   mutate(Interest = str_replace_all(Interest, "I consider myself to be a loyal fan of this team", "4")) %>% 
   mutate(Interest = str_replace_all(Interest, "I live and die with this team", "5")) %>% 
-  mutate(Interest = as.factor(Interest))
-                                    
+  mutate(Interest = as.factor(Interest)) %>% 
+  # rename media variables
+  rename(Website = Media8_1, Facebook = Media8_2, Twitter = Media8_3, Instagram = Media8_4, YouTube = Media8_5) %>% 
+  # rename game_with variables
+  rename(gamewit_fam = Gamewit1, gamewit_friends = Gamewit2, gamewit_colleagues = Gamewit3, gamewit_solo = Gamewit4)
+
 
 ```
 
+
+```{r}
+# Question 4 - sponsors
+
+soccer_sponsors <- soccer_og %>% 
+  # select businesses that sponsor the Reign
+  select(Spnbuy1:Spnbuy10) %>% 
+  # take the last character of each response to get numeric ranking
+  mutate(across(starts_with('Spnbuy'), function(x) str_sub(x, -1))) %>% 
+  # rename variables to real businesses
+  rename(Subaru = Spnbuy1, 
+         Microsoft = Spnbuy2, 
+         Pepsi = Spnbuy3, 
+         BECU = Spnbuy4, 
+         Chihuly = Spnbuy5, 
+         Hardrock = Spnbuy6, 
+         Health_Warrior = Spnbuy7, 
+         Hyatt = Spnbuy8, 
+         Kraken_Congee = Spnbuy9, 
+         Ruffneck_Scarves = Spnbuy10) %>% 
+  # make each column a row
+  pivot_longer(cols = everything())%>% 
+  # change class of 'value' to numeric
+  mutate(value = as.numeric(value)) %>% 
+  # group by and summarise the data
+  group_by(name) %>% 
+  summarise(value = mean(value, na.rm = TRUE))
+  
+         
+
+```
 
 
 
