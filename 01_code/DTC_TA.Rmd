@@ -48,7 +48,18 @@ library(car)           # linear hypothesis
 
 # Load and Transform Data
 
-```{r}
+1. Make updates to data
+
+2. Wrangle 6 subsets of data to answer the 6 different research questions
+
+    1. Determine the primary factors that impact attendance intentions, media consumption intentions, and merchandise consumption intention. 
+    2. Determine the factors that impact satisfaction (Performance, Outcome, Matchday Satisfaction).
+    3. Determine ways to increase brand attitude.
+    4. Investigate purchasing habits of corporate partner products. 
+    5. Investigate ways to improve gameday experience. 
+    6. Identify viable market segments
+
+```{r include=FALSE}
 # read data into environment and assign to object
 soccer_og <- read_csv("../02_raw_data/Seattle_Reign.csv")
 
@@ -68,9 +79,62 @@ soccer_updates <- soccer_og %>%
 
 ```
 
+```{r}
+# Question 1 - Determine the primary factors that impact attendance intentions, media consumption intentions, and merchandise consumption intention. 
+
+# select variables that will answer research question 1
+q1 <- soccer_og %>% 
+  select(Cost3, Clink1, Starfir1, Attend17, Seat1, Ticket1,
+         Media8_1:Media8_5, Media9, Media10, Media1:Media6, Media12, Media7a, Media7b,
+         Buymer1, Buyonl1, BuyMat1, BuyStor1, BuySpon1, Merimp20, Merimp22, Merimp24)
+  
+# select and mutate variables that answer Media Consumption Intentions
+media_int <- q1 %>% 
+  select(Media8_1:Media7b) %>% 
+  mutate(Media1 = str_sub(Media1, -2)) %>% 
+  mutate(Media3 = str_sub(Media3, -2)) %>%
+  mutate(Media4 = str_sub(Media4, -2)) %>%
+  mutate(Media5 = str_sub(Media5, -2)) %>%
+  mutate(Media6 = str_sub(Media6, -2)) %>%
+  mutate(Media12 = str_sub(Media12, -2)) %>%
+  mutate(Media7a = str_sub(Media7a, -2)) %>%
+  mutate(Media7b = str_sub(Media7b, -2)) %>% 
+  rename(Website = Media8_1, Facebook = Media8_2, Twitter = Media8_3, Instagram = Media8_4, YouTube = Media8_5) %>% 
+  mutate(across(starts_with("Media"), function(x) as.numeric(x))) %>%
+  pivot_longer(cols = everything()) %>% 
+  group_by(name) %>% 
+  summarise(value = mean(value, na.rm = TRUE))
+
+# select and mutate variables that answer Merchandise Consumption Intentions
+merch_int <- q1 %>% 
+  select(Buymer1:Merimp24)
+
+
+# select and mutate variables that answer Attendance Intentions
+att_int <- q1 %>% 
+  select(c(1:6))
+
+```
+
 
 ```{r}
-# Question 4 - sponsors
+# Question 2 - Determine the factors that impact satisfaction (Performance, Outcome, Matchday Satisfaction).
+
+
+```
+
+
+
+```{r}
+# Question 3 - Determine ways to increase brand attitude.
+
+
+```
+
+
+
+```{r}
+# Question 4 - Investigate purchasing habits of corporate partner products. 
 
 soccer_sponsors <- soccer_og %>% 
   # select businesses that sponsor the Reign
@@ -101,6 +165,23 @@ soccer_sponsors <- soccer_og %>%
 ```
 
 
+
+```{r}
+# Question 5 - Investigate ways to improve gameday experience.
+
+
+```
+
+
+
+
+
+```{r}
+# Question 6 - Identify viable market segments
+
+
+
+```
 
 
 
