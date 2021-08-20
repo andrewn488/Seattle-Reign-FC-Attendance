@@ -61,18 +61,78 @@ library(car)           # linear hypothesis
 
 ```{r include=FALSE}
 # read data into environment and assign to object
-soccer_og <- read_csv("../02_raw_data/Seattle_Reign.csv")
+soccer <- read_csv("../02_raw_data/Seattle_Reign.csv")
 
-# transform Interest responses to numeric
-soccer_updates <- soccer_og %>% 
+# make updates to data here so can pull from cleaned data
+soccer_updates <- soccer %>% 
+  # transform Interest responses to numeric
   mutate(Interest = str_replace_all(Interest, "I have a small amount of interest", "1")) %>% 
   mutate(Interest = str_replace_all(Interest, "I consider myself to be a low-level fan of this team", "2")) %>% 
   mutate(Interest = str_replace_all(Interest, "I consider myself to be a moderate fan of this team", "3")) %>% 
   mutate(Interest = str_replace_all(Interest, "I consider myself to be a loyal fan of this team", "4")) %>% 
   mutate(Interest = str_replace_all(Interest, "I live and die with this team", "5")) %>% 
+  # make Interest a factor
   mutate(Interest = as.factor(Interest)) %>% 
-  # rename media variables
-  rename(Website = Media8_1, Facebook = Media8_2, Twitter = Media8_3, Instagram = Media8_4, YouTube = Media8_5) %>% 
+  # media variables
+  mutate(Media1 = str_sub(Media1, -2)) %>% 
+  mutate(Media3 = str_sub(Media3, -2)) %>%
+  mutate(Media4 = str_sub(Media4, -2)) %>%
+  mutate(Media5 = str_sub(Media5, -2)) %>%
+  mutate(Media6 = str_sub(Media6, -2)) %>%
+  mutate(Media12 = str_sub(Media12, -2)) %>%
+  mutate(Media7a = str_sub(Media7a, -2)) %>%
+  mutate(Media7b = str_sub(Media7b, -2)) %>% 
+  # performance / outcome / matchday variables
+  mutate(Skill2 = str_to_title(Skill2)) %>% 
+  mutate(Success2 = str_to_title(Success2)) %>% 
+  mutate(Drama4 = str_to_title(Drama4)) %>% 
+  mutate(Aggress3 = str_to_title(Aggress3)) %>% 
+  mutate(Satperf3 = str_to_title(Satperf3)) %>% 
+  mutate(IDnattm1 = str_to_title(IDnattm1)) %>% 
+  mutate(IDcomm2 = str_to_title(IDcomm2)) %>% 
+  mutate(Escape1 = str_to_title(Escape1)) %>% 
+  mutate(Socint1 = str_to_title(Socint1)) %>% 
+  mutate(RoleMod2 = str_to_title(RoleMod2)) %>% 
+  mutate(Satout2 = str_to_title(Satout2)) %>% 
+  mutate(Drama4 = str_to_title(Drama4)) %>% 
+  # merch variables
+  mutate(Buymer1 = str_to_title(Buymer1)) %>% 
+  mutate(Buyonl1 = str_to_title(Buyonl1)) %>% 
+  mutate(BuyMat1 = str_to_title(BuyMat1)) %>% 
+  mutate(BuyStor1 = str_to_title(BuyStor1)) %>% 
+  mutate(BuySpon1 = str_to_title(BuySpon1)) %>% 
+  mutate(Merimp20 = str_to_title(Merimp20)) %>% 
+  mutate(Merimp22 = str_to_title(Merimp22)) %>% 
+  mutate(Merimp24 = str_to_title(Merimp24)) %>% 
+  # attendance variables
+  mutate(Cost3 = str_to_title(Cost3)) %>% 
+  mutate(Clink1 = str_to_title(Clink1)) %>% 
+  mutate(Starfir1 = str_to_title(Starfir1)) %>% 
+  mutate(Attend17 = str_to_title(Attend17)) %>% 
+  mutate(Seat1 = str_to_title(Seat1)) %>% 
+  mutate(Ticket1 = str_to_title(Ticket1)) %>% 
+  # brand attitude variables
+  mutate(BIRG1 = str_to_title(BIRG1)) %>% 
+  mutate(Posaff1 = str_to_title(Posaff1)) %>% 
+  mutate(Negaff1 = str_to_title(Negaff1)) %>% 
+  # sponsor variables
+  mutate(across(starts_with('Spnbuy'), function(x) str_sub(x, -1))) %>% 
+  mutate(across(starts_with('Spnbuy'), function(x) as.numeric(x))) %>% 
+  # grab last 2 characters of string and change class to numeric
+  mutate(Travel1 = str_sub(Travel1, -2)) %>%  
+  mutate(Travel1 = as.numeric(Travel1)) %>% 
+  mutate(Travel2 = str_sub(Travel2, -2)) %>%
+  mutate(Travel2 = as.numeric(Travel2)) %>% 
+  mutate(Travel3 = str_sub(Travel3, -2)) %>% 
+  mutate(Travel3 = as.numeric(Travel3)) %>% 
+  mutate(Seat1 = str_to_title(Seat1)) %>% 
+  # grab last 2 characters of Promo variables
+  mutate(across(starts_with('Promo'), function(x) str_sub(x, -2))) %>% 
+  mutate(across(starts_with('Promo'), function(x) as.numeric(x)))
+  
+
+
+%>% 
   # rename game_with variables
   rename(gamewit_fam = Gamewit1, gamewit_friends = Gamewit2, gamewit_colleagues = Gamewit3, gamewit_solo = Gamewit4)
 
@@ -83,23 +143,18 @@ soccer_updates <- soccer_og %>%
 # Question 1 - Determine the primary factors that impact attendance intentions, media consumption intentions, and merchandise consumption intention. 
 
 # select variables that will answer research question 1
-q1 <- soccer_og %>% 
+q1 <- soccer_updates %>% 
   select(Cost3, Clink1, Starfir1, Attend17, Seat1, Ticket1,
          Media8_1:Media8_5, Media9, Media10, Media1:Media6, Media12, Media7a, Media7b,
          Buymer1, Buyonl1, BuyMat1, BuyStor1, BuySpon1, Merimp20, Merimp22, Merimp24)
   
 # select and mutate variables that answer Media Consumption Intentions
 media_int <- q1 %>% 
+  # select variables to answer the question
   select(Media8_1:Media7b) %>% 
-  mutate(Media1 = str_sub(Media1, -2)) %>% 
-  mutate(Media3 = str_sub(Media3, -2)) %>%
-  mutate(Media4 = str_sub(Media4, -2)) %>%
-  mutate(Media5 = str_sub(Media5, -2)) %>%
-  mutate(Media6 = str_sub(Media6, -2)) %>%
-  mutate(Media12 = str_sub(Media12, -2)) %>%
-  mutate(Media7a = str_sub(Media7a, -2)) %>%
-  mutate(Media7b = str_sub(Media7b, -2)) %>% 
-  rename(Website = Media8_1, Facebook = Media8_2, Twitter = Media8_3, Instagram = Media8_4, YouTube = Media8_5) %>% 
+  # rename relevant variables
+  rename(Website = Media8_1, Facebook = Media8_2, Twitter = Media8_3, Instagram = Media8_4, YouTube = Media8_5) %>%
+  # change remaining "Media" variables to numeric
   mutate(across(starts_with("Media"), function(x) as.numeric(x))) %>%
   pivot_longer(cols = everything()) %>% 
   group_by(name) %>% 
@@ -109,9 +164,8 @@ media_int <- q1 %>%
 merch_int <- q1 %>% 
   select(Buymer1:Merimp24)
 
-
 # select and mutate variables that answer Attendance Intentions
-att_int <- q1 %>% 
+attendance_int <- q1 %>% 
   select(c(1:6))
 
 ```
@@ -121,29 +175,22 @@ att_int <- q1 %>%
 # Question 2 - Determine the factors that impact satisfaction (Performance, Outcome, Matchday Satisfaction).
 
 # select variables that will answer research question 2
-q2 <- soccer_og %>% 
+q2 <- soccer_updates %>% 
   select(Skill2, Success2, Drama4, Aggress3, Satperf3,
          Interest, IDnattm1, IDcomm2, Escape1, Skill2, Success2, Drama4, Aggress3, Socint1, RoleMod2, Satout2, Satperf3,
          Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1)
 
-
 # select and mutate variables that will answer Performance Satisfaction
-perf_sat <- q2 %>% 
-  select(c(1:5))
-
+performance_sat <- q2 %>% 
+  select(c(1:5)) 
 
 # select and mutate variables that will answer Outcome Satisfaction
-out_sat <- q2 %>% 
-  select(Interest:Satout2, Skill2:Satperf3, )
-
+outcome_sat <- q2 %>% 
+  select(Interest:Satout2, Skill2:Satperf3)
 
 # select and mutate variables that will answer Matchday Satisfaction
 match_sat <- q2 %>% 
-  select(Interest, Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1) %>% 
-  mutate(across(starts_with('Promo'), function(x) str_sub(x, -1))) %>% 
-  mutate() # mutate travel responses for Trave1-Travel3 but not Travel5-Travel6
-  
-
+  select(Interest, Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1)
 
 ```
 
@@ -152,6 +199,8 @@ match_sat <- q2 %>%
 ```{r}
 # Question 3 - Determine ways to increase brand attitude.
 
+q3 <- soccer_updates %>% 
+  select(Interest, BIRG1, RoleMod2, Posaff1, Negaff1)
 
 ```
 
@@ -160,31 +209,51 @@ match_sat <- q2 %>%
 ```{r}
 # Question 4 - Investigate purchasing habits of corporate partner products. 
 
-soccer_sponsors <- soccer_og %>% 
+q4 <- soccer_updates %>% 
   # select businesses that sponsor the Reign
-  select(Spnbuy1:Spnbuy10) %>% 
-  # take the last character of each response to get numeric ranking
-  mutate(across(starts_with('Spnbuy'), function(x) str_sub(x, -1))) %>% 
-  # rename variables to real businesses
-  rename(Subaru = Spnbuy1, 
-         Microsoft = Spnbuy2, 
-         Pepsi = Spnbuy3, 
-         BECU = Spnbuy4, 
-         Chihuly = Spnbuy5, 
-         Hardrock = Spnbuy6, 
-         Health_Warrior = Spnbuy7, 
-         Hyatt = Spnbuy8, 
-         Kraken_Congee = Spnbuy9, 
-         Ruffneck_Scarves = Spnbuy10) %>% 
-  # make each column a row
-  pivot_longer(cols = everything())%>% 
+  select(Purchs1:Purchs10, Spnbuy1:Spnbuy10) 
+
+purch_habits <- q4 %>% 
+  select(Purchs1:Purchs10) %>% 
+  rename(Subaru_purch = Purchs1,
+         Microsoft_purch = Purchs2, 
+         Pepsi_purch = Purchs3, 
+         BECU_purch = Purchs4, 
+         Chihuly_purch = Purchs5, 
+         Hardrock_purch = Purchs6, 
+         Health_Warrior_purch = Purchs7, 
+         Hyatt_purch = Purchs8, 
+         Kraken_Congee_purch = Purchs9, 
+         Ruffneck_Scarves_purch = Purchs10) 
+
+# still need to work on this one (8/19/2021)
+%>% 
+  pivot_longer(cols = everything()) %>% 
+  group_by(name) %>% 
+  summarise(count_n = n())
+
+%>% 
   # change class of 'value' to numeric
   mutate(value = as.numeric(value)) %>% 
   # group by and summarise the data
   group_by(name) %>% 
   summarise(value = mean(value, na.rm = TRUE))
-  
-         
+
+sponsor <- q4 %>% 
+  select(Spnbuy1:Spnbuy10) %>% 
+  rename(Subaru_spn = Spnbuy1, 
+         Microsoft_spn = Spnbuy2, 
+         Pepsi_spn = Spnbuy3, 
+         BECU_spn = Spnbuy4, 
+         Chihuly_spn = Spnbuy5, 
+         Hardrock_spn = Spnbuy6, 
+         Health_Warrior_spn = Spnbuy7, 
+         Hyatt_spn = Spnbuy8, 
+         Kraken_Congee_spn = Spnbuy9, 
+         Ruffneck_Scarves_spn = Spnbuy10) %>% 
+  pivot_longer(cols = everything()) %>% 
+  group_by(name) %>% 
+  summarise(value = mean(value, na.rm = TRUE))
 
 ```
 
@@ -193,6 +262,8 @@ soccer_sponsors <- soccer_og %>%
 ```{r}
 # Question 5 - Investigate ways to improve gameday experience.
 
+q5 <- soccer_updates %>% 
+  select(Matchsat:Consat7)
 
 ```
 
