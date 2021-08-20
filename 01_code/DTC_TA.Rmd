@@ -120,6 +120,30 @@ att_int <- q1 %>%
 ```{r}
 # Question 2 - Determine the factors that impact satisfaction (Performance, Outcome, Matchday Satisfaction).
 
+# select variables that will answer research question 2
+q2 <- soccer_og %>% 
+  select(Skill2, Success2, Drama4, Aggress3, Satperf3,
+         Interest, IDnattm1, IDcomm2, Escape1, Skill2, Success2, Drama4, Aggress3, Socint1, RoleMod2, Satout2, Satperf3,
+         Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1)
+
+
+# select and mutate variables that will answer Performance Satisfaction
+perf_sat <- q2 %>% 
+  select(c(1:5))
+
+
+# select and mutate variables that will answer Outcome Satisfaction
+out_sat <- q2 %>% 
+  select(Interest:Satout2, Skill2:Satperf3, )
+
+
+# select and mutate variables that will answer Matchday Satisfaction
+match_sat <- q2 %>% 
+  select(Interest, Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1) %>% 
+  mutate(across(starts_with('Promo'), function(x) str_sub(x, -1))) %>% 
+  mutate() # mutate travel responses for Trave1-Travel3 but not Travel5-Travel6
+  
+
 
 ```
 
