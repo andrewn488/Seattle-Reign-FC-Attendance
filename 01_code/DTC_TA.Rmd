@@ -274,7 +274,8 @@ q5 <- soccer_updates %>%
 ```{r}
 # Question 6 - Identify viable market segments
 
-
+q6 <- soccer_updates %>% 
+  select(Gender:Zipcode)
 
 ```
 
