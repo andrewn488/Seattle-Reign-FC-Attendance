@@ -63,15 +63,6 @@ library(car)           # linear hypothesis
 # read data into environment and assign to object
 soccer <- read_csv("../02_raw_data/Seattle_Reign.csv")
 
-soccer[soccer == "Strongly Disagree"] <- "-3"
-
-soccer[soccer == "Disagree"] <- -2
-soccer[soccer == "Somewhat Disagree"] <- -1
-soccer[soccer == "neutral"] <- 0
-soccer[soccer == "Somewhat Agree"] <- 1
-soccer[soccer == "agree"] <- 2
-soccer[soccer == "Strongly agree"] <- 3
-
 # make updates to data here so can pull from cleaned data
 soccer_updates <- soccer %>% 
   # transform Interest responses to numeric
@@ -141,6 +132,7 @@ soccer_updates <- soccer %>%
   
 # change all character responses to numeric scale to analyze as likert scale
 soccer_updates[soccer_updates == "Strongly disagree"] <- "-3"
+soccer_updates[soccer_updates == "Strongly Disagree"] <- "-3"
 soccer_updates[soccer_updates == "Disagree"] <- "-2"
 soccer_updates[soccer_updates == "Somewhat disagree"] <- "-1" 
 soccer_updates[soccer_updates == "Somewhat Disagree"] <- "-1" 
@@ -150,6 +142,12 @@ soccer_updates[soccer_updates == "Somewhat Agree"] <- "1"
 soccer_updates[soccer_updates == "Agree"] <- "2" 
 soccer_updates[soccer_updates == "Strongly agree"] <- "3"
 soccer_updates[soccer_updates == "Strongly Agree"] <- "3"
+soccer_updates[soccer_updates == "Very Unimportant"] <- "1"
+soccer_updates[soccer_updates == "Very Important"] <- "7"
+soccer_updates[soccer_updates == "Prefer not to answer"] <- "Undisclosed"
+soccer_updates[soccer_updates == "Very Dissatisfied"] <- "1"
+soccer_updates[soccer_updates == "Very Satisfied"] <- "7"
+
 
   # rename statement for game_with variables
   # rename(gamewit_fam = Gamewit1, gamewit_friends = Gamewit2, gamewit_colleagues = Gamewit3, gamewit_solo = Gamewit4)
@@ -169,52 +167,60 @@ q1 <- soccer_updates %>%
   select(Cost3, Clink1, Starfir1, Attend17, Seat1, Ticket1,
          Media8_1:Media8_5, Media9, Media10, Media1:Media6, Media12, Media7a, Media7b,
          Buymer1, Buyonl1, BuyMat1, BuyStor1, BuySpon1, Merimp20, Merimp22, Merimp24, Gender:Age)
-  
-# select and mutate variables that answer Media Consumption Intentions
+
+```
+
+```{r}
+# select and mutate variables that answer Attendance Intentions
+attendance_int <- q1 %>% 
+  select(c(1:6, Gender:Age))
+
+# change responses to numeric
+attendance_int[, c(1:6)] <- sapply(attendance_int[, c(1:6)], as.numeric)
+```
+
+
+```{r}
+# select and update variables that answer Media Consumption Intentions
 media_int <- q1 %>% 
   # select variables to answer the question
-  select(Media8_1:Media7b) %>% 
+  select(Media8_1:Media7b, Gender:Age) %>% 
   # rename relevant variables
   rename(Website = Media8_1, Facebook = Media8_2, Twitter = Media8_3, Instagram = Media8_4, YouTube = Media8_5) %>%
   # change remaining "Media" variables to numeric
   mutate(across(starts_with("Media"), function(x) as.numeric(x)))
   
-  
+# grouped dataset
 media_int_grouped <- media_int %>% 
   pivot_longer(cols = everything()) %>% 
   # cols -c(Posaff1): use if needed
   group_by(name) %>% 
   summarise(value = mean(value, na.rm = TRUE))
+```
 
+```{r}
 # select and mutate variables that answer Merchandise Consumption Intentions
 merch_int <- q1 %>% 
   select(Buymer1:Merimp24, Gender:Age)
-# need to convert responses to numbers then set as.numeric
 
 # change responses to numeric
 merch_int[, c(1:8)] <- sapply(merch_int[, c(1:8)], as.numeric)
-
-# select and mutate variables that answer Attendance Intentions
-attendance_int <- q1 %>% 
-  select(c(1:6))
-
-# change responses to numeric
-attendance_int[, c(1:6)] <- sapply(attendance_int[, c(1:6)], as.numeric)
-
 ```
+
 
 ## Base EDA Step 1: Uni-variate non-graphical EDA
 
 ```{r}
-# top of the dataset
+# top of the dataset and look each subset
+head(attendance_int)
+vtable(attendance_int)
+
 head(media_int)
 vtable(media_int)
 
 head(merch_int)
 vtable(merch_int)
 
-head(attendance_int)
-vtable(attendance_int)
 ```
 
 + data appears to be tidy
@@ -222,8 +228,8 @@ vtable(attendance_int)
     - data in each column is of the same variable type
     - no duplicate columns
     - each row is an individual's response to Reign survey
-    - survey responses all uniform formatting
-    - mix of character and numeric variables
+    - survey responses all uniform formatting (changed to cardinal responses and set as.numeric)
+    - numeric variables and categorical
     
 ```{r}
 # check descriptive statistics of media intentions
@@ -233,9 +239,9 @@ summary(media_int)
 **Comments**
 
     - most variables seem to be right skewed since mean >> median
+        - scale for most variables is -3 -> 3, so makes sense that 0 is median for many
         - median more representative than mean
     - lots of NA's that will need to be filtered out
-    - scale for most variables is -3 -> 3, so makes sense that 0 is median for many
     
 **Questions**
 
@@ -255,10 +261,11 @@ summary(merch_int)
 
 **Comments**
 
-    - all variables are agree/disagree character responses
-    - should this be converted to numerical to be interpreted as likert scale?
+    - converted variables with agree/disagree character responses to numeric cardinal scale
 
 **Questions**
+
++ figure out demographics of who wants to buy merch or not
 
 ```{r}
 # check descriptive statistics for attendance intentions
@@ -267,7 +274,12 @@ summary(attendance_int)
 
 **Comments**
 
+    - all variables on the scale of -3 -> 3
+    - accounting for ticket cost, thoughts about Century Link vs. Starfire venue, likelihood of attendance, seating setup, buying tickets online
+
 **Questions**
+
++ perhaps I need to include demographic data here to determine who wants to attend matches or not
 
 ## Base EDA Step 2: Uni-variate graphical EDA
 
@@ -275,32 +287,686 @@ summary(attendance_int)
 - Examine how many observations in each variable
 
 ```{r}
-# media intentions
+# SOCIAL media intentions - how many times accessed per week
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Website
+ggplot(data = media_int, mapping = aes(x = Website)) +
+  geom_bar(),
+
+# Facebook
+ggplot(data = media_int, mapping = aes(x = Facebook)) +
+  geom_bar(), 
+
+# Twitter
+ggplot(data = media_int, mapping = aes(x = Twitter)) +
+  geom_bar(),
+
+# Instagram
+ggplot(data = media_int, mapping = aes(x = Instagram)) + 
+  geom_bar(),
+
+# YouTube
+ggplot(data = media_int, mapping = aes(x = YouTube)) + 
+  geom_bar(),
+
+ncol = 2 )
 ```
 
 **Comments**
 
+    - appears that the Website gets 1 hit per week is the strongest social media outlet
+    - IG appears to be the weakest social media outlet
+    - YouTube has some popularity
+    - Twitter has spikes of interest
+    - Website and FB are similar from 2+
+    
 **Questions**
+
++ why is the Website getting the most hits?
+
++ why does YouTube getting more hits than other social media outlets?
+
+```{r}
+# non-social media intentions
+grid.arrange(
+
+# Media9
+ggplot(data = media_int, mapping = aes(x = Media9)) +
+  geom_bar(),
+
+# Media10
+ggplot(data = media_int, mapping = aes(x = Media10)) +
+  geom_bar(), 
+
+# Media1
+ggplot(data = media_int, mapping = aes(x = Media1)) +
+  geom_bar(),
+
+# Media3
+ggplot(data = media_int, mapping = aes(x = Media3)) + 
+  geom_bar(),
+
+# Media4
+ggplot(data = media_int, mapping = aes(x = Media4)) + 
+  geom_bar(),
+
+# Media5
+ggplot(data = media_int, mapping = aes(x = Media5)) +
+  geom_bar(), 
+
+# Media6
+ggplot(data = media_int, mapping = aes(x = Media6)) +
+  geom_bar(),
+
+# Media12
+ggplot(data = media_int, mapping = aes(x = Media12)) + 
+  geom_bar(),
+
+# Media7a
+ggplot(data = media_int, mapping = aes(x = Media7a)) + 
+  geom_bar(),
+
+# Media7b
+ggplot(data = media_int, mapping = aes(x = Media7b)) + 
+  geom_bar(),
+
+ncol = 2 )
+```
+
+**Comments**
+
+    - More positive reactions than negative
+    - Media4 and Media5 have most negative feelings
+        - Media4: Radio ads
+        - Media5: Media publicity
+    - Media12 the most positively received media
+        - Media12: EMAILS
+        - Really??
+
+**Questions**
+
++ Why are EMAILS the most positively received form of media?
+
+    - Perhaps because promo codes are included in emails to get ticket discounts/special offers
+    - Perhaps this is why the website is the most popular social media outlet too
+
+```{r}
+# merch intentions - 
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Buymer1
+ggplot(data = merch_int, mapping = aes(x = Buymer1)) +
+  geom_bar(),
+
+# Buyonl1
+ggplot(data = merch_int, mapping = aes(x = Buyonl1)) +
+  geom_bar(), 
+
+# BuyMat1
+ggplot(data = merch_int, mapping = aes(x = BuyMat1)) +
+  geom_bar(),
+
+# BuyStor1
+ggplot(data = merch_int, mapping = aes(x = BuyStor1)) + 
+  geom_bar(),
+
+# BuySpon1
+ggplot(data = merch_int, mapping = aes(x = BuySpon1)) + 
+  geom_bar(),
+
+ncol = 2 )
+```
+
+**Comments**
+
+    - mostly positive sentiments on these questions
+    - lots of people intending to buy merch in the future (Buymer1)
+    - Buying merch online skewed slightly positively (Buyonl1)
+        - online store doesn't seem to be enticing
+    - Intentions to buy merch at match (BuyMat1)
+    - Buying merch at stores only slightly skewed positively (BuyStor1)
+    - Buying from sponsors heavily skewed to positive side (BuySpon1)
+    
+**Questions**
+
++ seems like merch intentions are there
+
++ why do people feel this way about buying thru a sponsor?
 
 ```{r}
 # merch intentions
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Merimp20
+ggplot(data = merch_int, mapping = aes(x = Merimp20)) +
+  geom_bar(),
+
+# Merimp22
+ggplot(data = merch_int, mapping = aes(x = Merimp22)) +
+  geom_bar(), 
+
+# Merimp24
+ggplot(data = merch_int, mapping = aes(x = Merimp24)) +
+  geom_bar(),
+
+ncol = 2 )
 ```
 
 **Comments**
 
+    - affordability very important (merimp20)
+    - quality very important( merimp22)
+    - convenience of retail location not so important (merimp24)
+
 **Questions**
 
-
++ How can we pair affordability and quality to the "Buy" variables above?
 
 ```{r}
 # attendance intentions
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Cost3
+ggplot(data = attendance_int, mapping = aes(x = Cost3)) +
+  geom_bar(),
+
+# Clink1
+ggplot(data = attendance_int, mapping = aes(x = Clink1)) +
+  geom_bar(), 
+
+# Starfir1
+ggplot(data = attendance_int, mapping = aes(x = Starfir1)) +
+  geom_bar(),
+
+# Attend17
+ggplot(data = attendance_int, mapping = aes(x = Attend17)) + 
+  geom_bar(),
+
+# Seat1
+ggplot(data = attendance_int, mapping = aes(x = Seat1)) + 
+  geom_bar(),
+
+# Ticket1
+ggplot(data = attendance_int, mapping = aes(x = Ticket1)) + 
+  geom_bar(),
+
+ncol = 2 )
 ```
 
 **Comments**
 
+    - cost to attend is very important
+    - CenturyLink field has some opposition to it, but better than Starfire
+    - People don't seem to like Starfire as venue
+    - People definitly intent on attending 2017 season
+    - People seem to prefer general admission over assigned seating (Seat1)
+    - Positive reviews of buying tickets online (Ticket1)
+
 **Questions**
 
++ it seems that people prefer Century Link over Starfire, but it doesn't seem like people love Century Link. why not?
 
+    - probably because the venue is too big
+    - nobody likes paying for event parking 
+
++ why do people prefer general seating over assigned seating?
+    
+    - perhaps because there's not too many people at these games so you have the choice to sit as close as you want
+    
+## Base EDA Step 3: Multi-variate non-graphical
+
++ Focus on Website traffic for now since this was the most popular form of social media 
+
+```{r}
+# media intentions
+# Contingency/cross table - Website on Gender
+
+media_int %>% 
+  tabyl(Website, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+media_int %>% 
+  tabyl(Website, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+```
+
+**Comments**
+
+    - 2/3 of population that access Reign website are female. 1/3 male
+    - most times to access the website for both male and female is 1
+
+**Questions**
+
++ I wonder how female fans are treated/marketed to compared to male fans?
+
+```{r}
+# media intentions
+# Contingency/cross table - Website on Race
+
+media_int %>% 
+  tabyl(Website, Race) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+media_int %>% 
+  tabyl(Website, Race) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+```
+
+**Comments**
+
+    - Vast majority of website traffic comes from white people
+    - Asians consist of 10% of website traffic
+    
+**Questions**
+
++ "other" has higher percentage than Native, Black, Hawaiian, and Prefer to answer. I wonder what these "other" categories are?
+
+```{r}
+# media intentions
+# Contingency/cross table - Facebook on Gender
+
+media_int %>% 
+  tabyl(Facebook, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+media_int %>% 
+  tabyl(Website, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+```
+
+```{r}
+# media intentions
+# Contingency/cross table - Website on SexOrient
+
+media_int %>% 
+  tabyl(Website, SexOrient) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+media_int %>% 
+  tabyl(Website, SexOrient) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+```
+
+**Comments**
+
+    - Most website traffic comes from straight people
+    - Gay/Lesbian community are huge in the Reign fanbase
+
+**Questions**
+
++ I wonder how "die hard" the Gay/Lesbian community is compared to the Straight community?
+
+
+```{r}
+# media intentions
+# Contingency/cross table - EMAILS on Demographics
+
+media_int %>% 
+  tabyl(Media12, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+media_int %>% 
+  tabyl(Media12, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+```
+
+**Comments**
+
+    - Emails more positively received by females
+    
+**Questions**
+
++ why are these emails so important?
+
+```{r}
+# media intentions
+# Contingency/cross table - EMAILS on Demographics
+
+media_int %>% 
+  tabyl(Media12, SexOrient) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+media_int %>% 
+  tabyl(Media12, SexOrient) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+```
+
+**Comments**
+
+    - straight community has more positive reaction to Emails from Reign
+    
+```{r}
+# media intentions
+# Contingency/cross table - EMAILS on Demographics
+
+media_int %>% 
+  tabyl(Media12, Race) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+media_int %>% 
+  tabyl(Media12, Race) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+```
+
+**Comments** 
+
+    - similar results as Website on Race
+    - White people love these Reign emails, Asian people too
+
+```{r}
+# merch intentions
+# Contingency/cross table
+
+
+```
+
+```{r}
+# attendance intentions
+# Contingency/cross table
+
+```
+
+
+## Correlation matrix
+
+```{r}
+media_int_corr <- media_int %>% 
+  select_if(is.numeric) %>%   # Use to select just the numeric variables
+  cor() %>% 
+  round(2) 
+
+media_int_corr
+
+# use corrplot for correlation matrix
+corrplot(media_int_corr)
+
+media_int_corr <- media_int %>% 
+  select_if(is.numeric) %>%   # Use to select just the numeric variables
+  cor()
+
+corrplot(media_int_corr,
+         method = "number",
+         sig.level = 0.05,
+         order = "original",
+         diag = FALSE,
+         type = "upper",
+         tl.srt = 45,
+         tl.col = "black")
+```
+
+**Comments**
+
+    - Good hints to see correlation between variables
+    - Remember to not take these results too seriously
+    
+## Base EDA Step 4: Multi-variate graphical
+
+- Bar graphs with multiple categorical variables
+
+```{r}
+# Code univariate bar graphs using grid.arrange so can see graphs together
+# Demographics of Website users
+
+grid.arrange(
+  
+  media_int %>% 
+    ggplot(mapping = aes(x = Website, fill = Gender)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  media_int %>% 
+    ggplot(mapping = aes(x = Website, fill = SexOrient)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  media_int %>%
+    ggplot(mapping = aes(x = Website, fill = Race)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(), 
+  
+  ncol = 1
+)
+```
+
+**Comments**
+
+    - Confirmed trends in demographics of website users
+    
+**Questions**
+
++ what does this tell me about Media Intentions?
+
+    - Reign website is best way to communicate information to fans since it is the most widely accessed form of social media
+    - All other social media outlets need to link to the website
+    - website must ensure easy UI and ability to make purchases
+
+```{r}
+# Tile graph - need count
+media_int %>% 
+  group_by(Website, Gender) %>% 
+  summarize(count = n()) %>% 
+  ggplot(aes(Website, Gender)) + 
+  geom_tile(aes(fill = -count))
+```
+
+**Comments**
+
+    - Most hits on website comes from Females, once a week
+    
+## Step 4.2: Quantitative
+
+```{r}
+# Code scatterplots using grid.arrange so can see all quant variables together
+grid.arrange(
+  # website on gender
+  media_int %>% 
+    ggplot(mapping = aes(x = Website, y = Gender)) + 
+    geom_point(position = "jitter"),
+  
+  # website on SexOrient
+  media_int %>% 
+    ggplot(mapping = aes(x = Website, y = SexOrient)) + 
+    geom_point(position = "jitter"),
+  
+  # website on race
+  media_int %>% 
+    ggplot(mapping = aes(x = Website, y = Race)) + 
+    geom_point(position = "jitter"),
+  
+    ncol = 2
+)
+```
+
+```{r}
+# Code scatterplots using grid.arrange so can see all quant variables together
+grid.arrange(
+  # facebook on gender
+  media_int %>% 
+    ggplot(mapping = aes(x = Facebook, y = Gender)) + 
+    geom_point(position = "jitter"),
+  
+  # facebook on SexOrient
+  media_int %>% 
+    ggplot(mapping = aes(x = Facebook, y = SexOrient)) + 
+    geom_point(position = "jitter"),
+  
+  # facebook on race
+  media_int %>% 
+    ggplot(mapping = aes(x = Facebook, y = Race)) + 
+    geom_point(position = "jitter"),
+  
+    ncol = 2
+)
+
+```
+
+
+```{r}
+# Code scatterplots using grid.arrange so can see all quant variables together
+grid.arrange(
+  # YouTube on gender
+  media_int %>% 
+    ggplot(mapping = aes(x = YouTube, y = Gender)) + 
+    geom_point(position = "jitter"),
+  
+  # YouTube on SexOrient
+  media_int %>% 
+    ggplot(mapping = aes(x = YouTube, y = SexOrient)) + 
+    geom_point(position = "jitter"),
+  
+  # YouTube on race
+  media_int %>% 
+    ggplot(mapping = aes(x = YouTube, y = Race)) + 
+    geom_point(position = "jitter"),
+  
+    ncol = 2
+)
+```
+
+## Categorical and Quantitative
+
+```{r}
+grid.arrange(
+  # Website, Facebook, YouTube
+  media_int %>% 
+    ggplot(mapping = aes(x = Website, y = SexOrient, color = Gender)) + 
+    geom_point(position = "jitter", alpha = 0.5) + 
+    geom_smooth(method = "lm", se = FALSE), 
+  
+  media_int %>% 
+    ggplot(mapping = aes(x = Facebook, y = SexOrient, color = Gender)) + 
+    geom_point(position = "jitter", alpha = 0.5) + 
+    geom_smooth(method = "lm", se = FALSE),
+  
+  media_int %>% 
+    ggplot(mapping = aes(x = YouTube, y = SexOrient, color = Gender)) + 
+    geom_point(position = "jitter", alpha = 0.5) + 
+    geom_smooth(method = "lm", se = FALSE), 
+  
+  media_int %>% 
+    ggplot(mapping = aes(x = Instagram, y = SexOrient, color = Gender)) + 
+    geom_point(position = "jitter", alpha = 0.5) + 
+    geom_smooth(method = "lm", se = FALSE), 
+  
+  media_int %>% 
+    ggplot(mapping = aes(x = Twitter, y = SexOrient, color = Gender)) + 
+    geom_point(position = "jitter", alpha = 0.5) + 
+    geom_smooth(method = "lm", se = FALSE), 
+  
+  ncol = 2
+  
+  )
+
+  
+```
+
+**Comments**
+
+    - Social media usage dominated by Females
+    - Not much interest from gay male community
+    - Male interest primarily from straight community
+    
+**Questions**
+
++ What drives Female interest in the Reign?
+
+```{r}
+#  box plots
+grid.arrange(
+  # website on gender
+  media_int %>% 
+    ggplot(mapping = aes(x = Website, y = Gender)) + 
+    geom_boxplot(),
+  
+  # Facebook on gender
+  media_int %>% 
+    ggplot(mapping = aes(x = Facebook, y = Gender)) + 
+    geom_boxplot(),
+  
+  # YouTube on gender
+  media_int %>% 
+    ggplot(mapping = aes(x = YouTube, y = Gender)) + 
+    geom_boxplot(),
+    
+  # IG on gender
+  media_int %>% 
+    ggplot(mapping = aes(x = Instagram, y = Gender)) + 
+    geom_boxplot(),
+  
+  # Twitter on gender
+  media_int %>% 
+    ggplot(mapping = aes(x = Twitter, y = Gender)) + 
+    geom_boxplot()
+  
+  )
+  
+  
+```
+
+**Comments**
+
+    - Website and YouTube accessed evenly by both Males and Females
+    - Facebook, Instagram, and Twitter preferred by Females
+
+# Research Question 2: Determine the factors that impact satisfaction (Performance, Outcome, Matchday Satisfaction).
 
 ```{r}
 # Question 2 - Determine the factors that impact satisfaction (Performance, Outcome, Matchday Satisfaction).
@@ -309,43 +975,555 @@ summary(attendance_int)
 q2 <- soccer_updates %>% 
   select(Skill2, Success2, Drama4, Aggress3, Satperf3,
          Interest, IDnattm1, IDcomm2, Escape1, Skill2, Success2, Drama4, Aggress3, Socint1, RoleMod2, Satout2, Satperf3,
-         Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1)
+         Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1, 
+         Matchsat:Consat5, Gender:Age)
 
 # select and mutate variables that will answer Performance Satisfaction
 performance_sat <- q2 %>% 
-  select(c(1:5)) 
+  select(c(1:5, Gender:Age)) 
+
+# change data to numeric
+performance_sat[, c(1:5)] <- sapply(performance_sat[, c(1:5)], as.numeric)
 
 # select and mutate variables that will answer Outcome Satisfaction
 outcome_sat <- q2 %>% 
-  select(Interest:Satout2, Skill2:Satperf3)
+  select(Interest:Satout2, Skill2:Satperf3, Gender:Age)
+
+# change data to numeric
+outcome_sat[, c(1:12)] <- sapply(outcome_sat[, c(1:12)], as.numeric)
 
 # select and mutate variables that will answer Matchday Satisfaction
 match_sat <- q2 %>% 
-  select(Interest, Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1)
+  select(Matchsat:Consat5, Gender:Age)
 
+# change data to numeric
+match_sat[, c(1:16)] <- sapply(match_sat[, c(1:16)], as.numeric)
+
+match_sat <- match_sat %>% 
+  tibble::rownames_to_column("Questions")
 ```
 
+## Base EDA Step 1: Uni-variate non-graphical EDA
 
+```{r}
+# top of the dataset and look each subset
+head(performance_sat)
+vtable(performance_sat)
+
+head(outcome_sat)
+vtable(outcome_sat)
+
+head(match_sat)
+vtable(match_sat)
+```
+
++ data appears to be tidy
+
+    - data in each column is of the same variable type
+    - no duplicate columns
+    - each row is an individual's response to Reign survey
+    - survey responses all uniform formatting (changed to cardinal responses and set as.numeric)
+    - numeric variables and categorical
+    
+```{r}
+# check descriptive statistics of media intentions
+summary(performance_sat)
+```
+
+**Comments**
+
+    - most variables seem to be close to normal distribution (Median = Mean)
+    - when Mean > Median, that means fans were satisfied with the specific performance
+    - all variables on -3 -> +3 scale
+    
+    
+**Questions**
+
++ how can I gauge performance satisfaction with these variables? 
+
+    - If highly positive, then people are satisfied
+
+```{r}
+# check descriptive statistics of media intentions
+summary(outcome_sat)
+```
+
+**Comments**
+
+    - when Mean > Median, that means fans were satisfied with the specific performance
+    - all variables on -3 -> +3 scale
+    
+**Questions**
+
++ If response is highly positive, then people are satisfied
+
+```{r}
+# check descriptive statistics of media intentions
+summary(match_sat)
+```
+
+**Comments**
+
+    - when Mean > Median, that means fans were satisfied with the specific performance
+    - all variables on 0 -> 7 scale
+    - Neutral line is at 4
+    
+**Questions**
+
++ If response is above 4, then people are satisfied
+
+## Base EDA Step 2: Uni-variate graphical EDA
+
+- Examine each variable individually
+- Examine how many observations in each variable
+
+```{r}
+# performance satisfaction - how satisfied
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Skill2
+ggplot(data = performance_sat, mapping = aes(x = Skill2)) +
+  geom_bar(),
+
+# Success2
+ggplot(data = performance_sat, mapping = aes(x = Success2)) +
+  geom_bar(), 
+
+# Drama4
+ggplot(data = performance_sat, mapping = aes(x = Drama4)) +
+  geom_bar(),
+
+# Aggress3
+ggplot(data = performance_sat, mapping = aes(x = Aggress3)) + 
+  geom_bar(),
+
+# Satperf3
+ggplot(data = performance_sat, mapping = aes(x = Satperf3)) + 
+  geom_bar(),
+
+ncol = 2 )
+```
+
+**Comments**
+
+    - Appears to have overall positive thoughts on performance variables
+    - Higher counts on right side of 0 than on left side
+    
+**Questions**
+
++ Should I pull in demographics to this to see how different demographics feel about different aspects of the game?
+
+```{r}
+# outcome satisfaction - how satisfied
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Satisfaction of Outcome
+ggplot(data = outcome_sat, mapping = aes(x = Satout2)) +
+  geom_bar(),
+
+# IDnattm1
+ggplot(data = outcome_sat, mapping = aes(x = IDnattm1)) +
+  geom_bar(), 
+
+# IDcomm2
+ggplot(data = outcome_sat, mapping = aes(x = IDcomm2)) +
+  geom_bar(),
+
+ncol = 2 )
+```
+
+**Comments**
+
+    - Most respondents identify as fans of the National Team
+    - Most respondents identify as part of the Seattle Community
+    - Satisfaction of Outcome is slightly positive
+    
+**Questions**
+
++ How can a team influence outcome satisfaction?
+
+    - If most fans identify as part of the Seattle community and as fans of the national team, perhaps getting more national team players would help drive 
+
++ Perhaps I should bring in demographics to this as well to see who's satisfied or not
+
+
+```{r}
+# matchday satisfaction - how satisfied
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Satisfaction of match
+ggplot(data = match_sat, mapping = aes(x = Matchsat)) +
+  geom_bar(),
+
+# Experience satisfaction at the stadium
+ggplot(data = match_sat, mapping = aes(x = Expsat1)) +
+  geom_bar(), 
+
+# Satisfaction of staff from stadium
+ggplot(data = match_sat, mapping = aes(x = Prsnsat1)) +
+  geom_bar(),
+
+# Satisfaction of stadium security
+ggplot(data = match_sat, mapping = aes(x = Prsnsat2)) +
+  geom_bar(),
+
+ncol = 2 )
+```
+
+**Comments**
+
+    - Match day satisfaction mostly positively satisfied
+    - Experience at Memorial Stadium mostly positive
+    - Friendliness of staff is positive (Prsnsat1)
+    - People are mostly satisfied with security of the venue (Prsnsat2)
+
+**Questions**
+
++ Need to pull in demographics to see who was satisfied for Match day and who was not
+
+```{r}
+# visualize likert data
+match_sat %>% 
+  group_by(Matchsat, Expsat1, Prsnsat1) %>% 
+  summarize(n = n()) %>% 
+  gather(Questions, Response, -c(n)) %>% 
+  mutate(Response = as.factor(Response)) %>%  
+  ggplot(mapping = aes(x = Questions, y = n, fill = Response)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  coord_flip() +
+    theme_classic() +
+  theme(axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+**Comments**
+
+    - Many people were Very Satisfied with the match
+    - Majority of people highly satisfied with all aspects of match day
+    - Experience at Memorial Stadium was the weakest satisfaction variable about match day
+    
+**Questions**
+
++ Why the low satisfaction in Expsat1?
+
+## Base EDA Step 3: Multi-variate non-graphical
+
+```{r}
+# outcome satisfaction
+# Contingency/cross table - Performance Satisfaction
+
+outcome_sat %>% 
+  tabyl(Satout2, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+outcome_sat %>% 
+  tabyl(Satout2, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+```
+
+**Comments**
+
+    - Same amount of females that are slightly dissatisfied as there are as slightly satisfied (13%)
+    - Barely anyone feeling Very Dissatisfied or Very Satisfied
+    - Many people feel neutral about the outcome
+    
+**Questions**
+
++ What plays into people's satisfaction of the outcome?
+
++ Are people more satisfied when the team wins?
+
+```{r}
+# outcome satisfaction
+# Contingency/cross table - Performance Satisfaction
+
+outcome_sat %>% 
+  tabyl(Success2, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+outcome_sat %>% 
+  tabyl(Success2, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+```
+
+**Comments**
+
+    - It seems that the success of the team influences the satisfaction of the match outcome
+    - Success does not have the most weight as I assumed
+    - People believe that the team wins more matches than it loses
+    
+**Questions**
+
++ How can I apply this to outcome satisfacation?
+
+
+```{r}
+# performance satisfaction
+# Contingency/cross table - Performance Satisfaction
+
+performance_sat %>% 
+  tabyl(Satperf3, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+performance_sat %>% 
+  tabyl(Satperf3, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+```
+
+```{r}
+# matchday satisfaction
+# Contingency/cross table - Performance Satisfaction
+
+match_sat %>% 
+  tabyl(Matchsat, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+match_sat %>% 
+  tabyl(Matchsat, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+```
+
+**Comments**
+
+    - Majority of people are satisfied with matchday experience
+    - Most satisfaction coming from Females
+    - Not too many people dissatisfied 
+    
+**Questions**
+
++ People seem to be satisfied with Matchday experience, yet not as satisfied for games at Memorial stadium
+
+
+# Research Question 3: Determine ways to increase brand attitude.
 
 ```{r}
 # Question 3 - Determine ways to increase brand attitude.
 
 q3 <- soccer_updates %>% 
-  select(Interest, BIRG1, RoleMod2, Posaff1, Negaff1)
+  select(Interest, BIRG1, RoleMod2, Posaff1, Negaff1, 
+         Gender:Age)
+
+q3[, c(1:5)] <- sapply(q3[, c(1:5)], as.numeric)
+  
+
+```
+
+## Base EDA Step 1: Uni-variate non-graphical EDA
+
+```{r}
+# top of the dataset and look each subset
+head(q3)
+vtable(q3)
+```
+
++ data appears to be tidy
+
+    - data in each column is of the same variable type
+    - no duplicate columns
+    - each row is an individual's response to Reign survey
+    - survey responses all uniform formatting (changed to cardinal responses and set as.numeric)
+    - numeric variables and categorical variables
+    
+```{r}
+# check descriptive statistics of media intentions
+summary(media_int)
 
 ```
 
 
+**Comments**
+
+    - most variables seem to be right skewed since mean >> median
+        - scale for most variables is -3 -> 3, so makes sense that 0 is median for many
+        - median more representative than mean
+    - lots of NA's that will need to be filtered out
+    
+**Questions**
+
++ how can I gauge ways to increase brand attitude with these variables?
+
+    - Account for role models on the team, positive and negative affirmation, and break it out by demographics
+
+## Base EDA Step 2: Uni-variate graphical EDA
+
+- Examine each variable individually
+- Examine how many observations in each variable
+
+```{r}
+# increase brand attitude
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Interest
+ggplot(data = q3, mapping = aes(x = Interest)) +
+  geom_bar(),
+
+# BIRG1
+ggplot(data = q3, mapping = aes(x = BIRG1)) +
+  geom_bar(), 
+
+# RoleMod2
+ggplot(data = q3, mapping = aes(x = RoleMod2)) +
+  geom_bar(),
+
+# Posaff1
+ggplot(data = q3, mapping = aes(x = Posaff1)) + 
+  geom_bar(),
+
+# Negaff1
+ggplot(data = q3, mapping = aes(x = Negaff1)) + 
+  geom_bar(),
+
+ncol = 2 )
+```
+
+**Comments**
+
+    - Majority of people are positively interested in the team
+    - More sentiment around showing others about team support/association (BIRG1)
+    - Majority of people believe the players are positive role models for children
+    - Most people feel positive about Reign 2016 season
+    - Most people do not feel negative about Reign 2016 season
+    
+```{r}
+# visualize likert data
+q3 %>% 
+  group_by(BIRG1, RoleMod2, Posaff1, Negaff1) %>% 
+  summarize(n = n()) %>% 
+  gather(Questions, Response, -c(n)) %>% 
+  mutate(Response = as.factor(Response)) %>%  
+  ggplot(mapping = aes(x = Questions, y = n, fill = Response)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  coord_flip() +
+    theme_classic() +
+  theme(axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+**Comments**
+
+    - There is a tiny number of respondents that are Very Unsatisfied with
+    - Vast majority of respondents have positive sentiments toward the team and branding
+    - Reign seem to be like a good team to be role models to children
+    
+    
+## Correlation matrix
+
+```{r}
+q3_corr <- q3 %>% 
+  select_if(is.numeric) %>%   # Use to select just the numeric variables
+  cor() %>% 
+  round(2) 
+
+q3_corr
+
+# use corrplot for correlation matrix
+corrplot(q3_corr)
+
+q3_corr <- q3 %>% 
+  select_if(is.numeric) %>%   # Use to select just the numeric variables
+  cor()
+
+corrplot(q3_corr,
+         method = "number",
+         sig.level = 0.05,
+         order = "original",
+         diag = FALSE,
+         type = "upper",
+         tl.srt = 45,
+         tl.col = "black")
+```
+
+**Comments**
+
+    - Good hints to see correlation between variables
+    - Remember to not take these results too seriously
+    - Role Model is only correlation that's registering. Gotta be good role models to the kiddos!
+    
+**Questions**
+
++ Not sure if I'm doing something that broke this corr chart. Why is everything else NA when they're all numeric? Perhaps too small to register?
+
+## Base EDA Step 4: Multi-variate graphical
+
+- Bar graphs with multiple categorical variables
+
+```{r}
+# Code univariate bar graphs using grid.arrange so can see graphs together
+# Increase brand attitude
+
+grid.arrange(
+  
+  q3 %>% 
+    ggplot(mapping = aes(x = Interest, fill = Gender)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q3 %>% 
+    ggplot(mapping = aes(x = BIRG1, fill = Gender)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q3 %>%
+    ggplot(mapping = aes(x = RoleMod2, fill = Gender)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(), 
+  
+  ncol = 1
+)
+```
+
+**Comments**
+
+    - Females seem to have the most pride in brand attitude
+    - Females believe Reign team are good role models to the kids
+    
+**Questions**
+
++ How can Reign convince Male fans to adopt the brand and identify as Reign fans?
+
+# Research Question 4: Investigate purchasing habits of corporate partner products. 
 
 ```{r}
 # Question 4 - Investigate purchasing habits of corporate partner products. 
 
 q4 <- soccer_updates %>% 
   # select businesses that sponsor the Reign
-  select(Purchs1:Purchs10, Spnbuy1:Spnbuy10) 
+  select(Purchs1:Purchs10, Spnbuy1:Spnbuy10, Gender:Age) 
 
 purch_habits <- q4 %>% 
-  select(Purchs1:Purchs10) %>% 
+  select(Purchs1:Purchs10) %>%
   rename(Subaru_purch = Purchs1,
          Microsoft_purch = Purchs2, 
          Pepsi_purch = Purchs3, 
@@ -357,19 +1535,17 @@ purch_habits <- q4 %>%
          Kraken_Congee_purch = Purchs9, 
          Ruffneck_Scarves_purch = Purchs10) 
 
-# still need to work on this one (8/19/2021)
-%>% 
+q4[, c(1:10)] <- sapply(q4[, c(1:10)], as.factor)
+    
+
+# if you need the grouped dataset
+
+purch_habits_grouped <- purch_habits %>% 
   pivot_longer(cols = everything()) %>% 
   group_by(name) %>% 
   summarise(count_n = n())
 
-%>% 
-  # change class of 'value' to numeric
-  mutate(value = as.numeric(value)) %>% 
-  # group by and summarise the data
-  group_by(name) %>% 
-  summarise(value = mean(value, na.rm = TRUE))
-
+# grouping by sponsor
 sponsor <- q4 %>% 
   select(Spnbuy1:Spnbuy10) %>% 
   rename(Subaru_spn = Spnbuy1, 
@@ -388,7 +1564,258 @@ sponsor <- q4 %>%
 
 ```
 
+## Base EDA Step 1: Uni-variate non-graphical EDA
 
+```{r}
+# top of the dataset and look each subset
+head(q4)
+vtable(q4)
+
+
+```
+
++ data appears to be tidy
+
+    - data in each column is of the same variable type
+    - no duplicate columns
+    - each row is an individual's response to Reign survey
+    - survey responses all uniform formatting (changed to cardinal responses and set as.numeric)
+    - numeric variables and categorical
+
+```{r}
+# check descriptive statistics of q4
+summary(q4)
+```
+
+**Comments**
+
+    - 4 is neutral line in these survey questions
+        - scale is from 1 to 7
+    - Appears that most questions were answered as neutral or negatively
+    
+**Questions**
+
++ how can I gauge purchasing habits with these variables?
+
+    - If it is seen that people are more satisfied with a particular sponsor, then that sponsor should become Reign's biggest champion
+    - Success from a sponsor partnership will spur interest with more sponsors
+    - More sponsors will enable more fans to get involved which will lead to an increase in brand attitude
+    - Partnerships with sponsors should be good for both partners
+
+## Base EDA Step 2: Uni-variate graphical EDA
+
+- Examine each variable individually
+- Examine how many observations in each variable
+
+```{r}
+# Purchase habits
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Spnbuy variables
+ggplot(data = q4, mapping = aes(x = Spnbuy1)) +
+  geom_bar(),
+
+ggplot(data = q4, mapping = aes(x = Spnbuy2)) +
+  geom_bar(), 
+
+ggplot(data = q4, mapping = aes(x = Spnbuy3)) +
+  geom_bar(),
+
+ggplot(data = q4, mapping = aes(x = Spnbuy4)) + 
+  geom_bar(),
+
+
+ggplot(data = q4, mapping = aes(x = Spnbuy5)) + 
+  geom_bar(),
+
+ggplot(data = q4, mapping = aes(x = Spnbuy6)) +
+  geom_bar(),
+
+ggplot(data = q4, mapping = aes(x = Spnbuy7)) +
+  geom_bar(), 
+
+ggplot(data = q4, mapping = aes(x = Spnbuy8)) +
+  geom_bar(),
+
+ggplot(data = q4, mapping = aes(x = Spnbuy9)) + 
+  geom_bar(),
+
+ggplot(data = q4, mapping = aes(x = Spnbuy10)) + 
+  geom_bar(),
+
+ncol = 4 )
+```
+
+**Comments**
+
+    - Microsoft seems to have the most influence on sponsorships (Spnbuy2)
+    - Roughneck Scarves seems to have a decent following (Spnbuy10)
+        - Probably because everyone buys scarves to wear on matchday
+    - It doesn't seem that any of these sponsors have a particular amount of influence over behaviors
+    
++ Kraken Congee seems to have a little more influence, possibly thanks to Reign popularity with Asian demographic
+    
+**Questions**
+
++ What kind of "deals" would entice people to get behind a specific sponsor?
+
++ These sponsors aren't really that habit forming for repeat purchases from fans (other than Pepsi). It seems that the Reign need to choose different company sponsors to really influence customer behavior
+
+    - People don't buy subarus all the time
+    - People don't go to Chihuly or Hardrock Cafe more than they really have to
+    - Fans probably don't need a sponsorship from Hyatt House if they go to Reign home games and they already live in Seattle
+
+## Base EDA Step 3: Multi-variate non-graphical
+
++ Focus on Website traffic for now since this was the most popular form of social media 
+
+```{r}
+# purchasing habits
+# Contingency/cross table - Website on Gender
+
+q4 %>% 
+  tabyl(Spnbuy2, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+q4 %>% 
+  tabyl(Spnbuy2, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+```
+
+**Comments**
+
+    - Males seem to be motivated my Microsoft more than other brand sponsorships (35%)
+    - Still much higher participation from Female respondents
+
+**Questions**
+
++ I wonder how female fans are treated/marketed to compared to male fans?
+
+```{r}
+q4 %>% 
+  tabyl(Spnbuy10, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+q4 %>% 
+  tabyl(Spnbuy10, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+```
+
+## Correlation matrix
+
+```{r}
+q4_corr <- q4 %>% 
+  select_if(is.numeric) %>%   # Use to select just the numeric variables
+  cor() %>% 
+  round(2) 
+
+q4_corr
+
+# use corrplot for correlation matrix
+corrplot(q4_corr)
+
+```
+
+**Comments**
+
+    - Good hints to see correlation between variables
+    - Remember to not take these results too seriously
+    
+## Base EDA Step 4: Multi-variate graphical
+
+- Bar graphs with multiple categorical variables
+
+```{r}
+# Code univariate bar graphs using grid.arrange so can see graphs together
+# influencing purchasing habits
+
+grid.arrange(
+  
+  q4 %>% 
+    ggplot(mapping = aes(x = Spnbuy2, fill = Gender)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q4 %>% 
+    ggplot(mapping = aes(x = Spnbuy2, fill = SexOrient)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q4 %>%
+    ggplot(mapping = aes(x = Spnbuy2, fill = Race)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(), 
+  
+  ncol = 1
+)
+```
+
+**Comments**
+
+    - Biggest market: straight, white, females
+    
+**Questions**
+
++ what does this tell me about purchasing habits?
+
+    - Largest market is straight white women
+        - Seek sponsorships from businesses that target these types of people (perhaps something like Target!)
+    - Second largest market is the Gay/Lesbian community
+        - Seek sponsorships from businesses that support the gay community (perhaps something like Rudy's barbershop)
+
+```{r}
+# Tile graph heat map - need count
+q4 %>% 
+  group_by(Spnbuy2, Gender) %>% 
+  summarize(count = n()) %>% 
+  ggplot(aes(Spnbuy2, Gender)) + 
+  geom_tile(aes(fill = -count))
+```
+
+**Comments**
+
+    - Females are mostly Neutral or not strongly influenced by Microsoft sponsorship
+    - Males are slightly more influenced
+
+```{r}
+# visualize likert data
+q4 %>% 
+  group_by(Spnbuy2, Spnbuy10) %>% 
+  summarize(n = n()) %>% 
+  gather(Questions, Response, -c(n)) %>% 
+  mutate(Response = as.factor(Response)) %>%  
+  ggplot(mapping = aes(x = Questions, y = n, fill = Response)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  coord_flip() +
+    theme_classic() +
+  theme(axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+**Comments**
+
+    - Pretty even distribution for these two variables
+    - More positive satisfaction for Microsoft (Spnbuy2)
+    - Pretty even for Ruffneck Scarves (Spnbuy10)
+
+
+# Research Question 5: Investigate ways to improve gameday experience.
 
 ```{r}
 # Question 5 - Investigate ways to improve gameday experience.
@@ -398,9 +1825,23 @@ q5 <- soccer_updates %>%
 
 ```
 
+## Base EDA Step 1: Uni-variate non-graphical EDA
+
+```{r}
+
+```
+
+## Base EDA Step 2: Uni-variate graphical EDA
+
+- Examine each variable individually
+- Examine how many observations in each variable
+
+```{r}
+
+```
 
 
-
+# Research Question 6: Identify viable market segments
 
 ```{r}
 # Question 6 - Identify viable market segments
@@ -410,8 +1851,20 @@ q6 <- soccer_updates %>%
 
 ```
 
+## Base EDA Step 1: Uni-variate non-graphical EDA
 
+```{r}
 
+```
+
+## Base EDA Step 2: Uni-variate graphical EDA
+
+- Examine each variable individually
+- Examine how many observations in each variable
+
+```{r}
+
+```
 
 
 
