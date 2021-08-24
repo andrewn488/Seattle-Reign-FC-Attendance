@@ -1571,7 +1571,6 @@ sponsor <- q4 %>%
 head(q4)
 vtable(q4)
 
-
 ```
 
 + data appears to be tidy
@@ -1821,15 +1820,46 @@ q4 %>%
 # Question 5 - Investigate ways to improve gameday experience.
 
 q5 <- soccer_updates %>% 
-  select(Matchsat:Consat7)
+  select(Matchsat:Consat7, Gender:Age)
+
+q5[, c(1:17)] <- sapply(q5[, c(1:17)], as.numeric)
 
 ```
 
 ## Base EDA Step 1: Uni-variate non-graphical EDA
 
 ```{r}
+# top of the dataset and look each subset
+head(q5)
+vtable(q5)
 
 ```
+
++ data appears to be tidy
+
+    - data in each column is of the same variable type
+    - no duplicate columns
+    - each row is an individual's response to Reign survey
+    - survey responses all uniform formatting (changed to cardinal responses and set as.numeric)
+    - numeric and categorical variables
+
+```{r}
+# check descriptive statistics of q4
+summary(q5)
+```
+
+**Comments**
+
+    - 4 is neutral line in these survey questions
+        - scale is from 1 to 7
+    - Appears that most questions were answered as positively or neutral
+    
+**Questions**
+
++ how can I gauge gameday experience with these variables?
+
+    - Look for the most negative ratings for a facet of the gameday experience and focus to improve that
+    - Find highest rating facet and highlight this
 
 ## Base EDA Step 2: Uni-variate graphical EDA
 
@@ -1837,8 +1867,233 @@ q5 <- soccer_updates %>%
 - Examine how many observations in each variable
 
 ```{r}
+# gameday experience
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Satisfaction variables
+ggplot(data = q5, mapping = aes(x = Matchsat)) +
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Expsat1)) +
+  geom_bar(), 
+
+ggplot(data = q5, mapping = aes(x = Prsnsat1)) +
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Autgsat1)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Prsnsat2)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Prsnsat3)) +
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Consat3)) +
+  geom_bar(), 
+
+ggplot(data = q5, mapping = aes(x = Consat4)) +
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Consat1)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Consat9)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Consat6)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Consat8)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Beersat1)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Consat2	)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Prsnsat4)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Consat5)) + 
+  geom_bar(),
+
+ggplot(data = q5, mapping = aes(x = Consat7)) + 
+  geom_bar(),
+
+ncol = 5 )
+```
+
+**Comments**
+
+    - Match satisfaction likely influences gameday experience (Matchsat)
+    - People don't seem to mind games at Memorial stadium (Expsat1)
+    - Friendliness of staff has high ratings (Prsnsat1)
+    - Variety of food options (Consat2) has negative ratings.
+        - Strategy to improve variety of food options would improve gameday experience. This makes sense
+        - Convenience of concession location is positively received
+    - Shocking to see such flat results for Location of Beer Garden (Beersat1)
+        - Perhaps this makes sense since majority of fans are straight women?
+        - Reign needs to put up a Spiked Seltzer garden or Rose fountain
+    
+**Questions**
+
++ Would it be possible to have food trucks in the parking lot? This would improve food variety but profits would need to be split
+
+## Base EDA Step 3: Multi-variate non-graphical
+
++ Focus on factors that go into gameday experience
+
+```{r}
+# gameday experience
+# Contingency/cross table
+
+q5 %>% 
+  tabyl(Consat2, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+q5 %>% 
+  tabyl(Consat2, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+q5 %>% 
+  tabyl(Consat2, SexOrient) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+q5 %>% 
+  tabyl(Consat2, SexOrient) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
 
 ```
+
+**Comments**
+
+    - Only slightly satisfied with food variety
+    - Food variety had the highest amount of negative responses out of this data
+    - Not many people loved the options, but not many people hated it either
+        -Improving food options and satisfying hangriness could help boost gameday experience
+
+**Questions**
+
++ I wonder what people would prefer to eat at a game
+
+## Correlation matrix
+
+```{r}
+q5_corr <- q5 %>% 
+  select_if(is.numeric) %>%   # Use to select just the numeric variables
+  cor() %>% 
+  round(2) 
+
+q5_corr
+
+# use corrplot for correlation matrix
+corrplot(q4_corr)
+
+```
+
+**Comments**
+
+    - Good hints to see correlation between variables
+    - Remember to not take these results too seriously
+    
+**Questions**
+
++ Need to fix NA's
+    
+## Base EDA Step 4: Multi-variate graphical
+
+- Bar graphs with multiple categorical variables
+
+```{r}
+# Code univariate bar graphs using grid.arrange so can see graphs together
+# influencing gameday experience
+
+grid.arrange(
+  
+  q5 %>% 
+    ggplot(mapping = aes(x = Consat2, fill = Gender)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q5 %>% 
+    ggplot(mapping = aes(x = Consat2, fill = SexOrient)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q5 %>%
+    ggplot(mapping = aes(x = Consat2, fill = Race)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(), 
+  
+  ncol = 1
+)
+```
+
+**Comments**
+
+    - Biggest market: straight, white, females
+    - Some people are pretty unhappy about the food options
+    
+**Questions**
+
++ what does this tell me about gameday experience?
+
+    - Need to feed the fans quality food
+    - Food purchases can contribute to profits
+
+```{r}
+# Tile graph heat map - need count
+q5 %>% 
+  group_by(Consat2, Gender) %>% 
+  summarize(count = n()) %>% 
+  ggplot(aes(Consat2, Gender)) + 
+  geom_tile(aes(fill = -count))
+```
+
+**Comments**
+
+    - Both males and females are very unsatisfied with variety of food at the game
+    - 4 is neutral
+
+```{r}
+# visualize likert data
+q5 %>% 
+  group_by(Consat2, Consat4) %>% 
+  summarize(n = n()) %>% 
+  gather(Questions, Response, -c(n)) %>% 
+  mutate(Response = as.factor(Response)) %>%  
+  ggplot(mapping = aes(x = Questions, y = n, fill = Response)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  coord_flip() +
+    theme_classic() +
+  theme(axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+**Comments**
+
+    - Majority of people feel negatively toward Variety of food (Consat2) and price point of food (Consat4)
+    
+**Questions**
+
++ What food options would people prefer to see offered at the game
 
 
 # Research Question 6: Identify viable market segments
