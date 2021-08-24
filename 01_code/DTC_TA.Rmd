@@ -114,7 +114,14 @@ soccer_updates[soccer_updates == "Very Important"] <- "7"
 soccer_updates[soccer_updates == "Prefer not to answer"] <- "Undisclosed"
 soccer_updates[soccer_updates == "Very Dissatisfied"] <- "1"
 soccer_updates[soccer_updates == "Very Satisfied"] <- "7"
-
+soccer_updates[soccer_updates == "Single"] <- "1"
+soccer_updates[soccer_updates == "Married/Partnered"] <- "2"
+soccer_updates[soccer_updates == "Some High School"] <- "1"
+soccer_updates[soccer_updates == "High School Graduate"] <- "2"
+soccer_updates[soccer_updates == "Some College"] <- "3"
+soccer_updates[soccer_updates == "College Graduate"] <- "4"
+soccer_updates[soccer_updates == "Graduate Degree"] <- "5"
+soccer_updates[soccer_updates == "Other"] <- "6"
 
 ```
 
@@ -1967,7 +1974,7 @@ vtable(q5)
     - numeric and categorical variables
 
 ```{r}
-# check descriptive statistics of q4
+# check descriptive statistics of q5
 summary(q5)
 ```
 
@@ -2230,13 +2237,49 @@ q5 %>%
 q6 <- soccer_updates %>% 
   select(Gender:Zipcode)
 
+q6[, c(5:22)] <- sapply(q6[, c(5:22)], as.numeric)
+
 ```
 
 ## Base EDA Step 1: Uni-variate non-graphical EDA
 
 ```{r}
+# top of the dataset and look each subset
+head(q6)
+vtable(q6)
 
 ```
+
++ data appears to be tidy
+
+    - data in each column is of the same variable type
+    - no duplicate columns
+    - each row is an individual's response to Reign survey
+    - survey responses all uniform formatting (changed to cardinal responses and set as.numeric)
+    - numeric and categorical variables
+
+```{r}
+# check descriptive statistics of q6
+summary(q6)
+```
+
+**Comments**
+
+    - There are several binary variables here, unlike the rest of the research questions
+        - The higher the mean, the more people identify as YES for the survey question
+    - GameTime variables - the higher the number, the later in the week and later in the day the game times are
+    - More Married/Partnered people than there are Single people
+    - Most people hold college degrees or graduate degrees
+    
+    
+**Questions**
+
++ how can I gauge market segments with these variables?
+
+    - If there are Reign fans that identify as fans of other Seattle sports teams, perhaps do promos where you can support both teams
+        - Sounders and Reign are doing a joint event in late August 2021
+        - Promote the Reign at other sporting events
+    - Schedule games during the times of most availability
 
 ## Base EDA Step 2: Uni-variate graphical EDA
 
@@ -2244,9 +2287,273 @@ q6 <- soccer_updates %>%
 - Examine how many observations in each variable
 
 ```{r}
+# market segments
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# fans of other teams/events and most popular match day/times
+ggplot(data = q6, mapping = aes(x = SeaEvnt1)) +
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = SeaEvnt2)) +
+  geom_bar(), 
+
+ggplot(data = q6, mapping = aes(x = SeaEvnt3)) +
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = SeaEvnt4)) + 
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = SeaEvnt5)) + 
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = SeaEvnt6)) +
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = SeaEvnt7)) +
+  geom_bar(), 
+
+ggplot(data = q6, mapping = aes(x = SeaEvnt8)) +
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = SeaEvnt9)) + 
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = GameTim1)) + 
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = GameTim2)) + 
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = GameTim3)) + 
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = GameTim4)) + 
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = GameTim5)) + 
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = GameTim6)) + 
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = GameTim7)) + 
+  geom_bar(),
+
+ncol = 5 )
+```
+
+**Comments**
+
+    - Biggest synergies would come from Sounders and Mariners as these are the highest attended team events
+    - Little support coming from SeaEvnt5 - SeaEvent9
+    - Most popular game time by far is Wednesday evenings
+        - This is surprising
+        - I guess the Reign is a weekday activity and people don't want to spend their weekends for it?
+    
+**Questions**
+
++ What does this tell me about market segments?
+
+    - Fans who support the Sounders and the Mariners are likely to support the Reign
+    - Wednesday night games are the most popular
+        - This makes it tough for families with children to go 
+        
++ White, Heterosexual Females were seen as the biggest market for Reign supporters. What does this tell me?
+
+    - Friends and boyfriends probably attend with them
+    - They don't care much to drink beer in a beer garden
+    - They want more variety in food options
+    
+```{r}
+# market segments
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+# market segment variables
+ggplot(data = q6, mapping = aes(x = Marital)) +
+  geom_bar(),
+
+ggplot(data = q6, mapping = aes(x = Educat)) +
+  geom_bar(),
+
+q6 %>% 
+    filter(str_detect(Gender, "ale")) %>% 
+    ggplot(mapping = aes(x = Gender)) + 
+    geom_bar(position = "dodge"), 
+
+q6 %>% 
+    filter(SexOrient %in% sexorient_ord) %>% 
+    ggplot(mapping = aes(x = SexOrient)) + 
+    geom_bar(position = "dodge"), 
+
+q6 %>% 
+    filter(Race %in% race_ord) %>% 
+    ggplot(mapping = aes(x = Race)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+
+ncol = 2)
+```
+
+**Comments**
+
+
+
+## Base EDA Step 3: Multi-variate non-graphical
+
++ Focus on factors that go into gameday experience
+
+```{r}
+# gameday experience
+# Contingency/cross table
+
+q5 %>% 
+  tabyl(Consat2, Gender) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+q5 %>% 
+  tabyl(Consat2, Gender) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+q5 %>% 
+  tabyl(Consat2, SexOrient) %>%     # creates table of counts
+  adorn_totals(where = c("row", "col")) %>%    # Total margins
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
+
+# Proportion contingency/cross table
+q5 %>% 
+  tabyl(Consat2, SexOrient) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
 
 ```
 
+**Comments**
+
+    - Only slightly satisfied with food variety
+    - Food variety had the highest amount of negative responses out of this data
+    - Not many people loved the options, but not many people hated it either
+        -Improving food options and satisfying hangriness could help boost gameday experience
+
+**Questions**
+
++ I wonder what people would prefer to eat at a game
+
+## Correlation matrix
+
+```{r}
+q5_corr <- q5 %>% 
+  select_if(is.numeric) %>%   # Use to select just the numeric variables
+  cor() %>% 
+  round(2) 
+
+q5_corr
+
+# use corrplot for correlation matrix
+corrplot(q5_corr)
+
+```
+
+**Comments**
+
+    - Good hints to see correlation between variables
+    - Remember to not take these results too seriously
+    
+**Questions**
+
++ Need to fix NA's
+    
+## Base EDA Step 4: Multi-variate graphical
+
+- Bar graphs with multiple categorical variables
+
+```{r}
+# Code univariate bar graphs using grid.arrange so can see graphs together
+# influencing gameday experience
+
+grid.arrange(
+  
+  q5 %>% 
+    filter(str_detect(Gender, "ale")) %>% 
+    ggplot(mapping = aes(x = Consat2, fill = Gender)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q5 %>% 
+    filter(SexOrient %in% sexorient_ord) %>% 
+    ggplot(mapping = aes(x = Consat2, fill = SexOrient)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q5 %>%
+    filter(Race %in% race_ord) %>% 
+    ggplot(mapping = aes(x = Consat2, fill = Race)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(), 
+  
+  ncol = 1
+)
+```
+
+**Comments**
+
+    - Biggest market: straight, white, females
+    - Some people are pretty unhappy about the food options
+    
+**Questions**
+
++ what does this tell me about gameday experience?
+
+    - Need to feed the fans quality food
+    - Food purchases can contribute to profits
+
+```{r}
+# Tile graph heat map - need count
+q5 %>% 
+  group_by(Consat2, Gender) %>% 
+  summarize(count = n()) %>% 
+  ggplot(aes(Consat2, Gender)) + 
+  geom_tile(aes(fill = -count))
+```
+
+**Comments**
+
+    - Both males and females are very unsatisfied with variety of food at the game
+    - 4 is neutral
+
+```{r}
+# visualize likert data
+q5 %>% 
+  group_by(Consat2, Consat4) %>% 
+  summarize(n = n()) %>% 
+  gather(Questions, Response, -c(n)) %>% 
+  mutate(Response = as.factor(Response)) %>%  
+  ggplot(mapping = aes(x = Questions, y = n, fill = Response)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  coord_flip() +
+    theme_classic() +
+  theme(axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
+
+**Comments**
+
+    - Majority of people feel negatively toward Variety of food (Consat2) and price point of food (Consat4)
+    
+**Questions**
+
++ What food options would people prefer to see offered at the game
 
 
 
