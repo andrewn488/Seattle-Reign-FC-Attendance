@@ -2606,4 +2606,68 @@ q6 %>%
 **Comments**
 
     - Sunday Evenings is the most popular (Gametime=7)
+    
+# Summary
+
++ Research Question 1
+
+    - Attendance Intentions: 
+    - It seems that the best experience is had at Memorial Stadium
+        - Better than Century Link
+        - Better than Starfire 
+    - Propose hosting games at Memorial Stadium
+    - Population seems to be happy with price point of tickets
+    
+    - Media Consumption Intentions: 
+    - Most media consumption happens on Website
+    - YouTube is second most consumed media
+    - Other social media is weak. Propose to beef up strategies around Facebook, Instagram, and Twitter
+    - Media12 is a heavy hitter - EMAILS
+    - Media5 - media publicity about Reign matches is positively received
+    
+    - Merch Intentions:
+    - People intend to buy merch at the match (BuyMat1)
+    - Most don't intend to buy merch at the store (BuyStor1)
+    - People likely to purchase goods or services from sponsors rather than a non-sponsor (BuySpon1)
+    - REGRESSION summary: 
+
++ Research Question 2
+
+    - Performance Satisfaction: 
+    - Performance Satisfaction is high (Satperf3)
+    - Excitement (Drama4), Aggression (Aggress3), Success (Success2), and Skill (Skill2) all contribute to Performance satisfaction
+    
+    - Outcome Satisfaction: 
+    - Not many people thrilled about outcome, but nobody really hated it
+    - Most people are big fans of the national team (IDnattm1)
+    - Most people feel part of the Seattle community (IDcomm2)
+    
+    - Matchday Satisfaction:
+    - Overall experience at Memorial Stadium is high (Expsat1)
+    - Friendliness of Arena Staff (Prsnsat1) and Security of Arena (Prsnsat2) are highly ranked
+    
++ Research Question 3
+
+    - Having the players serve as good role models to children can help improve brand attitude (RoleMod2)
+    - Need to brainstorm ways to get Males involved and proud of the brand
+    - REGRESSION summary: 
+
++ Research Question 4
+
+    - Microsoft (Spnbuy2) seems to have the most influence out of the sponsors
+    - BECU (Spnbuy4) comes in second after MSFT
+    - Hardrock Café (Spnbuy6), Health Warrior (Spnbuy7), and Hyatt House (Spnbuy8)- doesn't influence purchasing habits by much
+
++ Research Question 5
+
+    - Consat2 - variety of food options - lots of negativity
+    - Consat3 - Current concession offerings - lots of negativity
+    - Consat8 - people seem to love the convenience of concession location
+    - Prsnsat1 - friendliness of arena staff is very well received
+    - Focus improvement on Variety of food options and on Current concession offerings. These are negatively received aspects of the gameday experience
+
++ Research Question 6
+
+    - Reign fans also attend SeaEvnt3 (Sounders) and SeaEvnt4 (Mariners) events
+    - Gametim1 -> Game Time 7 is the most popular (Sunday Evenings)
 
