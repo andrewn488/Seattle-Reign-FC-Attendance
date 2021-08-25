@@ -1720,7 +1720,7 @@ export_summs(brand_att_reg)
 
 q4 <- soccer_updates %>% 
   # select businesses that sponsor the Reign
-  select(Purchs1:Purchs10, Spnbuy1:Spnbuy10, Gender:Age) 
+  select(ResponseId, Purchs1:Purchs10, Spnbuy1:Spnbuy10, Gender:Age) 
 
 purch_habits <- q4 %>% 
   select(Purchs1:Purchs10) %>%
@@ -1735,7 +1735,7 @@ purch_habits <- q4 %>%
          Kraken_Congee_purch = Purchs9, 
          Ruffneck_Scarves_purch = Purchs10) 
 
-q4[, c(1:10)] <- sapply(q4[, c(1:10)], as.factor)
+q4[, c(2:11)] <- sapply(q4[, c(2:11)], as.factor)
     
 
 # if you need the grouped dataset
@@ -1923,7 +1923,7 @@ q4 %>%
     
 ## Base EDA Step 4: Multi-variate graphical
 
-- Bar graphs with multiple categorical variables
++ Bar graphs with multiple categorical variables
 
 ```{r}
 # Code univariate bar graphs using grid.arrange so can see graphs together
@@ -2237,7 +2237,8 @@ q5 %>%
   group_by(Consat2, Gender) %>% 
   summarize(count = n()) %>% 
   ggplot(aes(Consat2, Gender)) + 
-  geom_tile(aes(fill = -count))
+  geom_tile(aes(fill = -count)) + 
+  scale_x_continuous(breaks = c(0, 1, 2, 3, 4, 5, 6, 7))
 ```
 
 **Comments**
@@ -2275,11 +2276,135 @@ q5 %>%
 # Question 6 - Identify viable market segments
 
 q6 <- soccer_updates %>% 
-  select(Gender:Zipcode)
+  select(ResponseId, Gender:Zipcode)
 
-q6[, c(5:22)] <- sapply(q6[, c(5:22)], as.numeric)
+q6[, c(6:23)] <- sapply(q6[, c(6:23)], as.numeric)
 
 ```
+
+```{r}
+# join q4 and q6 together to create datasource for dashboard
+
+# join q4 and q6 together
+dash_df <- left_join(q4, q6, by = "ResponseId")
+
+# make updates to dash_df so it shows up nice in PBI
+dash_df <- dash_df %>% 
+  # rename so looks nice in dashboard
+  rename(Gender = Gender.x,
+         SexOrient = SexOrient.x,
+         Race = Race.x, 
+         Age = Age.x) %>% 
+  # mutate things to NA so can drop them later
+  mutate(Race = str_replace_all(Race, "3", "NA")) %>% 
+  mutate(Purchs1 = str_replace_all(Purchs1, "I don't know", "NA")) %>% 
+  mutate(Purchs2 = str_replace_all(Purchs2, "I don't know", "NA")) %>% 
+  mutate(Purchs3 = str_replace_all(Purchs3, "I don't know", "NA")) %>% 
+  mutate(Purchs4 = str_replace_all(Purchs4, "I don't know", "NA")) %>% 
+  mutate(Purchs5 = str_replace_all(Purchs5, "I don't know", "NA")) %>% 
+  mutate(Purchs6 = str_replace_all(Purchs6, "I don't know", "NA")) %>% 
+  mutate(Purchs7 = str_replace_all(Purchs7, "I don't know", "NA")) %>% 
+  mutate(Purchs8 = str_replace_all(Purchs8, "I don't know", "NA")) %>% 
+  mutate(Purchs9 = str_replace_all(Purchs9, "I don't know", "NA")) %>% 
+  mutate(Purchs10 = str_replace_all(Purchs10, "I don't know", "NA")) %>% 
+  # drop NA's
+  drop_na(Race) %>% 
+  drop_na(Income) %>% 
+  drop_na(Purchs1) %>% 
+  drop_na(Purchs2) %>% 
+  drop_na(Purchs3) %>% 
+  drop_na(Purchs4) %>% 
+  drop_na(Purchs5) %>% 
+  drop_na(Purchs6) %>% 
+  drop_na(Purchs7) %>% 
+  drop_na(Purchs8) %>% 
+  drop_na(Purchs9) %>% 
+  drop_na(Purchs10) %>% 
+  # rename so looks nice in dashboard
+  rename(Subaru_purch = Purchs1,
+         Microsoft_purch = Purchs2, 
+         Pepsi_purch = Purchs3, 
+         BECU_purch = Purchs4, 
+         Chihuly_purch = Purchs5, 
+         Hardrock_purch = Purchs6, 
+         Health_Warrior_purch = Purchs7, 
+         Hyatt_purch = Purchs8, 
+         Kraken_Congee_purch = Purchs9, 
+         Ruffneck_Scarves_purch = Purchs10) %>% 
+  # drop NA's
+  drop_na(Spnbuy1) %>% 
+  drop_na(Spnbuy2) %>% 
+  drop_na(Spnbuy3) %>% 
+  drop_na(Spnbuy4) %>% 
+  drop_na(Spnbuy5) %>% 
+  drop_na(Spnbuy6) %>% 
+  drop_na(Spnbuy7) %>% 
+  drop_na(Spnbuy8) %>% 
+  drop_na(Spnbuy9) %>% 
+  drop_na(Spnbuy10) %>% 
+  # rename so looks nice in dashboard
+  rename(Subaru_spn = Spnbuy1, 
+         Microsoft_spn = Spnbuy2, 
+         Pepsi_spn = Spnbuy3, 
+         BECU_spn = Spnbuy4, 
+         Chihuly_spn = Spnbuy5, 
+         Hardrock_spn = Spnbuy6, 
+         Health_Warrior_spn = Spnbuy7, 
+         Hyatt_spn = Spnbuy8, 
+         Kraken_Congee_spn = Spnbuy9, 
+         Ruffneck_Scarves_spn = Spnbuy10) %>% 
+  # change 1's and 0's to Yes and No
+  mutate(across(starts_with('SeaEvnt'), function(x) as.character(x))) %>% 
+  mutate(SeaEvnt1 = str_replace_all(SeaEvnt1, "0", "No")) %>% 
+  mutate(SeaEvnt2 = str_replace_all(SeaEvnt2, "0", "No")) %>% 
+  mutate(SeaEvnt3 = str_replace_all(SeaEvnt3, "0", "No")) %>% 
+  mutate(SeaEvnt4 = str_replace_all(SeaEvnt4, "0", "No")) %>% 
+  mutate(SeaEvnt5 = str_replace_all(SeaEvnt5, "0", "No")) %>% 
+  mutate(SeaEvnt6 = str_replace_all(SeaEvnt6, "0", "No")) %>% 
+  mutate(SeaEvnt7 = str_replace_all(SeaEvnt7, "0", "No")) %>% 
+  mutate(SeaEvnt8 = str_replace_all(SeaEvnt8, "0", "No")) %>% 
+  mutate(SeaEvnt9 = str_replace_all(SeaEvnt9, "0", "No")) %>% 
+  mutate(SeaEvnt1 = str_replace_all(SeaEvnt1, "1", "Yes")) %>% 
+  mutate(SeaEvnt2 = str_replace_all(SeaEvnt2, "1", "Yes")) %>% 
+  mutate(SeaEvnt3 = str_replace_all(SeaEvnt3, "1", "Yes")) %>% 
+  mutate(SeaEvnt4 = str_replace_all(SeaEvnt4, "1", "Yes")) %>% 
+  mutate(SeaEvnt5 = str_replace_all(SeaEvnt5, "1", "Yes")) %>% 
+  mutate(SeaEvnt6 = str_replace_all(SeaEvnt6, "1", "Yes")) %>% 
+  mutate(SeaEvnt7 = str_replace_all(SeaEvnt7, "1", "Yes")) %>% 
+  mutate(SeaEvnt8 = str_replace_all(SeaEvnt8, "1", "Yes")) %>% 
+  mutate(SeaEvnt9 = str_replace_all(SeaEvnt9, "1", "Yes")) %>% 
+  # rename so looks nice in dashboard
+  rename(Storm = SeaEvnt1, 
+         Seahawks = SeaEvnt2, 
+         Sounders = SeaEvnt3, 
+         Mariners = SeaEvnt4, 
+         S2 = SeaEvnt5, 
+         Sounders_Women = SeaEvnt6, 
+         Majestics = SeaEvnt7, 
+         Tacoma_Stars = SeaEvnt8, 
+         Rat_City_Rollergirls = SeaEvnt9) %>% 
+  # drop NA's
+  drop_na(GameTim1) %>% 
+  drop_na(GameTim2) %>% 
+  drop_na(GameTim3) %>% 
+  drop_na(GameTim4) %>% 
+  drop_na(GameTim5) %>% 
+  drop_na(GameTim6) %>% 
+  drop_na(GameTim7) %>% 
+  # rename so looks nice in dashboard
+  rename(Wednesday_Evening = GameTim1, 
+         Friday_Evening = GameTim2, 
+         Saturday_1pm = GameTim3, 
+         Saturday_4pm = GameTim4, 
+         Saturday_Evening = GameTim5, 
+         Sunday_4pm = GameTim6, 
+         Sunday_Evening = GameTim7) %>% 
+  # de-select variables not needed
+  select(-c(Gender.y, SexOrient.y, Race.y, Age.y))
+
+write.csv(dash_df,"C:\\Users\\andre\\OneDrive\\SU\\OMSBA 5210\\DTC\\5210-DTC\\02_raw_data\\dash_df.csv", row.names = FALSE)
+```
+
 
 ## Base EDA Step 1: Uni-variate non-graphical EDA
 
@@ -2578,7 +2703,8 @@ q6 %>%
   group_by(SeaEvnt3, Gender) %>% 
   summarize(count = n()) %>% 
   ggplot(aes(SeaEvnt3, Gender)) + 
-  geom_tile(aes(fill = -count))
+  geom_tile(aes(fill = -count)) + 
+  scale_x_continuous(breaks = c(0, 1))
 ```
 
 **Comments**
@@ -2602,11 +2728,12 @@ q6 %>%
 
 **Comments**
 
-    - Majority of people feel negatively toward Variety of food (Consat2) and price point of food (Consat4)
+    - Majority of people have also been to Sounders (SeaEvnt3)
+    - Not as many repeat fans between Reign and Mariners (SeaEvnt4)
     
 **Questions**
 
-+ What food options would people prefer to see offered at the game
++ People must be soccer fans and not Seattle sports fans
 
 ```{r}
 q6 %>% 
