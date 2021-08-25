@@ -7,7 +7,7 @@ output:
     toc: true
     toc_depth: 3
     toc_float: true
-    number_sections: true
+    number_sections: false
 ---
 
 ```{r setup, include=FALSE}
@@ -134,7 +134,7 @@ soccer_updates[soccer_updates == "Other"] <- "6"
 
 # select variables that will answer research question 1
 q1 <- soccer_updates %>% 
-  select(Cost3, Clink1, Starfir1, Attend17, Seat1, Ticket1,
+  select(Cost3, Clink1, Starfir1, Attend17, Seat1, Ticket1, Expsat1,
          Media8_1:Media8_5, Media9, Media10, Media1:Media6, Media12, Media7a, Media7b,
          Buymer1, Buyonl1, BuyMat1, BuyStor1, BuySpon1, Merimp20, Merimp22, Merimp24, 
          Gender:Age)
@@ -144,10 +144,10 @@ q1 <- soccer_updates %>%
 ```{r}
 # select and mutate variables that answer Attendance Intentions
 attendance_int <- q1 %>% 
-  select(c(1:6, Gender:Age))
+  select(c(1:7, Gender:Age))
 
 # change responses to numeric
-attendance_int[, c(1:6)] <- sapply(attendance_int[, c(1:6)], as.numeric)
+attendance_int[, c(1:7)] <- sapply(attendance_int[, c(1:7)], as.numeric)
 ```
 
 
@@ -291,6 +291,10 @@ ncol = 2 )
     - YouTube has some popularity
     - Twitter has spikes of interest
     - Website and FB are similar from 2+
+    - Most media consumption happens on Website
+    - YouTube is second most consumed media
+    
++ Other social media is weak. Propose to beef up strategies around Facebook, Instagram, and Twitter
     
 **Questions**
 
@@ -402,6 +406,10 @@ ncol = 2 )
     - Intentions to buy merch at match (BuyMat1)
     - Buying merch at stores only slightly skewed positively (BuyStor1)
     - Buying from sponsors heavily skewed to positive side (BuySpon1)
+    - People intend to buy merch at the match (BuyMat1)
+    - Most don't intend to buy merch at the store (BuyStor1)
+    - People likely to purchase goods or services from sponsors rather than a non-sponsor (BuySpon1)
+    - REGRESSION: lm(Buymer1 ~ BuyMat1 + BuySpon1)
     
 **Questions**
 
@@ -490,6 +498,39 @@ ncol = 2 )
 + why do people prefer general seating over assigned seating?
     
     - perhaps because there's not too many people at these games so you have the choice to sit as close as you want
+    
+```{r}
+# attendance intentions
+# Only use bar graphs (like histogram) because nothing like boxplot for categorical variables
+grid.arrange(
+
+# Cost3
+ggplot(data = attendance_int, mapping = aes(x = Cost3)) +
+  geom_bar(),
+
+# Clink1
+ggplot(data = attendance_int, mapping = aes(x = Clink1)) +
+  geom_bar(), 
+
+# Starfir1
+ggplot(data = attendance_int, mapping = aes(x = Starfir1)) +
+  geom_bar(),
+
+# Memorial
+ggplot(data = attendance_int, mapping = aes(x = Expsat1)) +
+  geom_bar(),
+
+ncol = 2 )
+
+```
+
+**Comments**
+
+    - It seems that the best experience is had at Memorial Stadium
+        - Better than Century Link
+        - Better than Starfire 
+    - Propose hosting games at Memorial Stadium
+    - Population seems to be happy with price point of tickets
     
 ## Base EDA Step 3: Multi-variate non-graphical
 
@@ -1233,6 +1274,8 @@ ncol = 2 )
 
     - Appears to have overall positive thoughts on performance variables
     - Higher counts on right side of 0 than on left side
+    - Performance Satisfaction is high (Satperf3)
+    - Excitement (Drama4), Aggression (Aggress3), Success (Success2), and Skill (Skill2) all contribute to Performance satisfaction  
     
 **Questions**
 
@@ -1263,6 +1306,13 @@ ncol = 2 )
     - Most respondents identify as fans of the National Team
     - Most respondents identify as part of the Seattle Community
     - Satisfaction of Outcome is slightly positive
+    - Not many people thrilled about outcome, but nobody really hated it
+    - Most people are big fans of the national team (IDnattm1)
+    - Most people feel part of the Seattle community (IDcomm2)
+    - Perhaps variables from Performance Satisfaction?
+    - Overall experience at Memorial Stadium is high (Expsat1)
+    - Friendliness of Arena Staff (Prsnsat1) and Security of Arena (Prsnsat2) are highly ranked
+    
     
 **Questions**
 
@@ -1271,6 +1321,8 @@ ncol = 2 )
     - If most fans identify as part of the Seattle community and as fans of the national team, perhaps getting more national team players would help drive 
 
 + Perhaps I should bring in demographics to this as well to see who's satisfied or not
+
++ Is experience better at Memorial stadium or Clink or Starfire?
 
 
 ```{r}
@@ -1557,9 +1609,11 @@ q3 %>%
 
 **Comments**
 
-    - There is a tiny number of respondents that are Very Unsatisfied with
+    - There is a tiny number of respondents that would hide that their association with the Reign (BIRG1)
     - Vast majority of respondents have positive sentiments toward the team and branding
     - Reign seem to be like a good team to be role models to children
+    - Having the players serve as good role models to children can help improve brand attitude (RoleMod2)
+        - REGRESSION: lm(Interest ~ RoleMod2 + Gender)
     
     
 ## Correlation matrix
@@ -1775,12 +1829,16 @@ ncol = 4 )
 
 **Comments**
 
-    - Microsoft seems to have the most influence on sponsorships (Spnbuy2)
+    - Microsoft (Spnbuy2) seems to have the most influence out of the sponsors
+    - BECU (Spnbuy4) comes in second after MSFT
+    - Hardrock Café (Spnbuy6), Health Warrior (Spnbuy7), and Hyatt House (Spnbuy8)- doesn't influence purchasing habits by much
     - Roughneck Scarves seems to have a decent following (Spnbuy10)
         - Probably because everyone buys scarves to wear on matchday
     - It doesn't seem that any of these sponsors have a particular amount of influence over behaviors
     
 + Kraken Congee seems to have a little more influence, possibly thanks to Reign popularity with Asian demographic
+
+    - kraken congee is now closed as of 2021 :'(
     
 **Questions**
 
@@ -1843,25 +1901,6 @@ q4 %>%
   kableExtra::kable_styling(bootstrap_options = "striped")
 ```
 
-## Correlation matrix
-
-```{r}
-q4_corr <- q4 %>% 
-  select_if(is.numeric) %>%   # Use to select just the numeric variables
-  cor() %>% 
-  round(2) 
-
-q4_corr
-
-# use corrplot for correlation matrix
-corrplot(q4_corr)
-
-```
-
-**Comments**
-
-    - Good hints to see correlation between variables
-    - Remember to not take these results too seriously
     
 ## Base EDA Step 4: Multi-variate graphical
 
@@ -2058,6 +2097,10 @@ ncol = 5 )
 
 **Comments**
 
+    - Consat2 - variety of food options - lots of negativity
+    - Consat3 - Current concession offerings - lots of negativity
+    - Consat8 - people seem to love the convenience of concession location
+    - Prsnsat1 - friendliness of arena staff is very well received
     - Match satisfaction likely influences gameday experience (Matchsat)
     - People don't seem to mind games at Memorial stadium (Expsat1)
     - Friendliness of staff has high ratings (Prsnsat1)
@@ -2123,29 +2166,7 @@ q5 %>%
 
 + I wonder what people would prefer to eat at a game
 
-## Correlation matrix
 
-```{r}
-q5_corr <- q5 %>% 
-  select_if(is.numeric) %>%   # Use to select just the numeric variables
-  cor() %>% 
-  round(2) 
-
-q5_corr
-
-# use corrplot for correlation matrix
-corrplot(q4_corr)
-
-```
-
-**Comments**
-
-    - Good hints to see correlation between variables
-    - Remember to not take these results too seriously
-    
-**Questions**
-
-+ Need to fix NA's
     
 ## Base EDA Step 4: Multi-variate graphical
 
@@ -2397,40 +2418,48 @@ ncol = 2)
 
 **Comments**
 
-
+    - Top segments:
+        - Married/Partnered
+        - College degree and/or Graduate Degree
+        - Female
+        - Heterosexual
+        - White
+    - Target market: White, college educated, married/partnered, heterosexual females
 
 ## Base EDA Step 3: Multi-variate non-graphical
 
-+ Focus on factors that go into gameday experience
++ Focus on factors that go into market segment
 
 ```{r}
-# gameday experience
+# market segment
 # Contingency/cross table
 
-q5 %>% 
-  tabyl(Consat2, Gender) %>%     # creates table of counts
+q6 %>% 
+  tabyl(SeaEvnt3, Gender) %>%     # creates table of counts
   adorn_totals(where = c("row", "col")) %>%    # Total margins
   kable() %>% 
   kableExtra::kable_styling(bootstrap_options = "striped")
 
 # Proportion contingency/cross table
-q5 %>% 
-  tabyl(Consat2, Gender) %>% 
+q6 %>% 
+  tabyl(SeaEvnt3, Gender) %>% 
   adorn_totals(where = c("row", "col")) %>% 
   adorn_percentages(denominator = "all") %>% # creates proportions
   adorn_rounding(2) %>%  # round decimals
   kable() %>% 
   kableExtra::kable_styling(bootstrap_options = "striped")
 
-q5 %>% 
-  tabyl(Consat2, SexOrient) %>%     # creates table of counts
+q6 %>% 
+  filter(SexOrient %in% sexorient_ord) %>% 
+  tabyl(Marital, SexOrient) %>%     # creates table of counts
   adorn_totals(where = c("row", "col")) %>%    # Total margins
   kable() %>% 
   kableExtra::kable_styling(bootstrap_options = "striped")
 
 # Proportion contingency/cross table
-q5 %>% 
-  tabyl(Consat2, SexOrient) %>% 
+q6 %>% 
+  filter(SexOrient %in% sexorient_ord) %>% 
+  tabyl(Marital, SexOrient) %>% 
   adorn_totals(where = c("row", "col")) %>% 
   adorn_percentages(denominator = "all") %>% # creates proportions
   adorn_rounding(2) %>%  # round decimals
@@ -2441,38 +2470,23 @@ q5 %>%
 
 **Comments**
 
-    - Only slightly satisfied with food variety
-    - Food variety had the highest amount of negative responses out of this data
-    - Not many people loved the options, but not many people hated it either
-        -Improving food options and satisfying hangriness could help boost gameday experience
+    - Married/Partnered:
+        - 11% of married/partnered couples are Gay/Lesbian
+        - 50% married/partnered couples are straight
+        - 2% bisexual
+    - Single people:
+        - 21% straight
+        - 10% gay/lesbian
+        - 4% bisexual
+    - Female:
+        - 33% of females have attended a Sounders game
 
 **Questions**
 
-+ I wonder what people would prefer to eat at a game
++ I thought there would be more of a following from Gay/Lesbian community?
 
-## Correlation matrix
++ What does straight people in relationships making up majority of the market tell me?
 
-```{r}
-q5_corr <- q5 %>% 
-  select_if(is.numeric) %>%   # Use to select just the numeric variables
-  cor() %>% 
-  round(2) 
-
-q5_corr
-
-# use corrplot for correlation matrix
-corrplot(q5_corr)
-
-```
-
-**Comments**
-
-    - Good hints to see correlation between variables
-    - Remember to not take these results too seriously
-    
-**Questions**
-
-+ Need to fix NA's
     
 ## Base EDA Step 4: Multi-variate graphical
 
@@ -2484,58 +2498,78 @@ corrplot(q5_corr)
 
 grid.arrange(
   
-  q5 %>% 
+  q6 %>% 
     filter(str_detect(Gender, "ale")) %>% 
-    ggplot(mapping = aes(x = Consat2, fill = Gender)) + 
+    ggplot(mapping = aes(x = SeaEvnt3, fill = Gender)) + 
     geom_bar(position = "dodge") + 
     coord_flip(),
   
-  q5 %>% 
+  q6 %>% 
     filter(SexOrient %in% sexorient_ord) %>% 
-    ggplot(mapping = aes(x = Consat2, fill = SexOrient)) + 
+    ggplot(mapping = aes(x = SeaEvnt3, fill = SexOrient)) + 
     geom_bar(position = "dodge") + 
     coord_flip(),
   
-  q5 %>%
+  q6 %>%
     filter(Race %in% race_ord) %>% 
-    ggplot(mapping = aes(x = Consat2, fill = Race)) + 
+    ggplot(mapping = aes(x = SeaEvnt3, fill = Race)) + 
     geom_bar(position = "dodge") + 
     coord_flip(), 
   
-  ncol = 1
+    q6 %>% 
+    filter(str_detect(Gender, "ale")) %>% 
+    ggplot(mapping = aes(x = SeaEvnt4, fill = Gender)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q6 %>% 
+    filter(SexOrient %in% sexorient_ord) %>% 
+    ggplot(mapping = aes(x = SeaEvnt4, fill = SexOrient)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(),
+  
+  q6 %>%
+    filter(Race %in% race_ord) %>% 
+    ggplot(mapping = aes(x = SeaEvnt4, fill = Race)) + 
+    geom_bar(position = "dodge") + 
+    coord_flip(), 
+  
+  ncol = 2
 )
 ```
 
 **Comments**
 
     - Biggest market: straight, white, females
-    - Some people are pretty unhappy about the food options
+    - Female Reign attendees have most likely attended a Sounders game
+    - More likely for a female fan to attend a Sounders game than a Mariner's game
+    - Unlikely for a straight person to have attended a Mariner's game
     
 **Questions**
 
-+ what does this tell me about gameday experience?
++ what does this tell me about market segments?
 
-    - Need to feed the fans quality food
-    - Food purchases can contribute to profits
+    - People who are fans of the Reign are likely fans of the Sounders
+        - Fans of soccer
+        - REGRESSION: lm(SeaEvnt3 ~ Interest + Gender)
 
 ```{r}
 # Tile graph heat map - need count
-q5 %>% 
-  group_by(Consat2, Gender) %>% 
+q6 %>% 
+  group_by(SeaEvnt3, Gender) %>% 
   summarize(count = n()) %>% 
-  ggplot(aes(Consat2, Gender)) + 
+  ggplot(aes(SeaEvnt3, Gender)) + 
   geom_tile(aes(fill = -count))
 ```
 
 **Comments**
 
-    - Both males and females are very unsatisfied with variety of food at the game
-    - 4 is neutral
+    - It is likely that the Female cohort also attend Sounders games
 
 ```{r}
 # visualize likert data
-q5 %>% 
-  group_by(Consat2, Consat4) %>% 
+q6 %>% 
+  group_by(SeaEvnt3, SeaEvnt4) %>% 
   summarize(n = n()) %>% 
   gather(Questions, Response, -c(n)) %>% 
   mutate(Response = as.factor(Response)) %>%  
@@ -2555,6 +2589,21 @@ q5 %>%
 
 + What food options would people prefer to see offered at the game
 
+```{r}
+q6 %>% 
+  group_by(GameTim1, GameTim2, GameTim3) %>% 
+  summarize(n = n()) %>% 
+  gather(Questions, Response, -c(n)) %>% 
+  mutate(Response = as.factor(Response)) %>%  
+  ggplot(mapping = aes(x = Questions, y = n, fill = Response)) + 
+  geom_bar(stat = "identity", position = "fill") +
+  coord_flip() +
+    theme_classic() +
+  theme(axis.title.x = element_blank(),
+        axis.ticks = element_blank())
+```
 
+**Comments**
 
+    - Sunday Evenings is the most popular (Gametime=7)
 
