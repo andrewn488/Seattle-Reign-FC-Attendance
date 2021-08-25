@@ -24,13 +24,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Load Libraries
 
-```{r message=FALSE, include=FALSE}
+```{r}
 library(tidyverse)     # contains ggplot2, dplyr, and several other packages
 library(ggannotate)    # annotation tool
 library(gridExtra)     # use to put graphs together in the same frame
 library(janitor)       # contains tidyverse functions for cross-tables
 library(knitr)         # contains some table formatting functions
-library(GGally)        # contains a custom correlation plot
 library(scales)        # to get $ and , on axis in graph
 library(corrplot)      # used for correlation plot with good looks below
 library(tidyr)         # tidy r
@@ -38,12 +37,10 @@ library(kableExtra)    # extra kable formatting
 library(vtable)        # NHK special
 library(gghighlight)   # visual formatting - highlights
 library(agricolae)     # for statistical testing
-library(huxtable)      # table formatting
 library(jtools)        # export summs table
 library(car)           # linear hypothesis
 
 ```
-
 
 
 # Load and Transform Data
@@ -59,7 +56,7 @@ library(car)           # linear hypothesis
     5. Investigate ways to improve gameday experience. 
     6. Identify viable market segments
 
-```{r include=FALSE}
+```{r}
 # read data into environment and assign to object
 soccer <- read_csv("../02_raw_data/Seattle_Reign.csv")
 
@@ -1031,7 +1028,7 @@ grid.arrange(
 )
 ```
 
-## Categorical and Quantitative
+## Step 4.3: Categorical and Quantitative
 
 ```{r}
 grid.arrange(
@@ -1693,6 +1690,28 @@ grid.arrange(
 **Questions**
 
 + How can Reign convince Male fans to adopt the brand and identify as Reign fans?
+
+
+## Statistical EDA: Research Question 3
+
+```{r}
+# statistical analysis to support findings of Question 3
+brand_att <- q3 %>% 
+  filter(str_detect(Gender, "ale"))
+
+brand_att_reg <- lm(formula = Interest ~ as.factor(RoleMod2) + as.factor(Gender), data = brand_att)
+
+export_summs(brand_att_reg)
+
+brand_att_reg <- lm(formula = BIRG1 ~ as.factor(RoleMod2), data = brand_att)
+
+export_summs(brand_att_reg)
+```
+
+**Comments**
+
+    - Reign being role models is statistically significant factor for brand pride
+        - People want to be known as being associated with the Reign if the team serve as good role models. 
 
 # Research Question 4: Investigate purchasing habits of corporate partner products. 
 
@@ -2612,39 +2631,40 @@ q6 %>%
 + Research Question 1
 
     - Attendance Intentions: 
-    - It seems that the best experience is had at Memorial Stadium
-        - Better than Century Link
-        - Better than Starfire 
-    - Propose hosting games at Memorial Stadium
-    - Population seems to be happy with price point of tickets
+        - It seems that the best experience is had at Memorial Stadium
+            - Better than Century Link
+            - Better than Starfire 
+        - Propose hosting games at Memorial Stadium
+        - Population seems to be happy with price point of tickets
     
     - Media Consumption Intentions: 
-    - Most media consumption happens on Website
-    - YouTube is second most consumed media
-    - Other social media is weak. Propose to beef up strategies around Facebook, Instagram, and Twitter
-    - Media12 is a heavy hitter - EMAILS
-    - Media5 - media publicity about Reign matches is positively received
+        - Most media consumption happens on Website
+        - YouTube is second most consumed media
+        - Other social media is weak. Propose to beef up strategies around Facebook, Instagram, and Twitter
+        - Media12 is a heavy hitter - EMAILS
+        - Media5 - media publicity about Reign matches is positively received
     
     - Merch Intentions:
-    - People intend to buy merch at the match (BuyMat1)
-    - Most don't intend to buy merch at the store (BuyStor1)
-    - People likely to purchase goods or services from sponsors rather than a non-sponsor (BuySpon1)
+        - People intend to buy merch at the match (BuyMat1)
+        - Most don't intend to buy merch at the store (BuyStor1)
+        - People likely to purchase goods or services from sponsors rather than a non-sponsor (BuySpon1)
+    
     - REGRESSION summary: 
 
 + Research Question 2
 
     - Performance Satisfaction: 
-    - Performance Satisfaction is high (Satperf3)
-    - Excitement (Drama4), Aggression (Aggress3), Success (Success2), and Skill (Skill2) all contribute to Performance satisfaction
+        - Performance Satisfaction is high (Satperf3)
+        - Excitement (Drama4), Aggression (Aggress3), Success (Success2), and Skill (Skill2) all contribute to Performance satisfaction
     
     - Outcome Satisfaction: 
-    - Not many people thrilled about outcome, but nobody really hated it
-    - Most people are big fans of the national team (IDnattm1)
-    - Most people feel part of the Seattle community (IDcomm2)
+        - Not many people thrilled about outcome, but nobody really hated it
+        - Most people are big fans of the national team (IDnattm1)
+        - Most people feel part of the Seattle community (IDcomm2)
     
     - Matchday Satisfaction:
-    - Overall experience at Memorial Stadium is high (Expsat1)
-    - Friendliness of Arena Staff (Prsnsat1) and Security of Arena (Prsnsat2) are highly ranked
+        - Overall experience at Memorial Stadium is high (Expsat1)
+        - Friendliness of Arena Staff (Prsnsat1) and Security of Arena (Prsnsat2) are highly ranked
     
 + Research Question 3
 
@@ -2656,7 +2676,7 @@ q6 %>%
 
     - Microsoft (Spnbuy2) seems to have the most influence out of the sponsors
     - BECU (Spnbuy4) comes in second after MSFT
-    - Hardrock Café (Spnbuy6), Health Warrior (Spnbuy7), and Hyatt House (Spnbuy8)- doesn't influence purchasing habits by much
+    - Hardrock Café (Spnbuy6), Health Warrior (Spnbuy7), and Hyatt House (Spnbuy8) - doesn't influence purchasing habits by much
 
 + Research Question 5
 
