@@ -134,7 +134,8 @@ q1 <- soccer_updates %>%
   select(Cost3, Clink1, Starfir1, Attend17, Seat1, Ticket1, Expsat1,
          Media8_1:Media8_5, Media9, Media10, Media1:Media6, Media12, Media7a, Media7b,
          Buymer1, Buyonl1, BuyMat1, BuyStor1, BuySpon1, Merimp20, Merimp22, Merimp24, 
-         Gender:Age)
+         Gender:Age, 
+         Interest, Gamewit1:Gamewit4)
 
 ```
 
@@ -1128,6 +1129,210 @@ grid.arrange(
     - Website and YouTube accessed evenly by both Males and Females
     - Facebook, Instagram, and Twitter preferred by Females
 
+
+
+## Statistical EDA
+
+```{r}
+# media intentions
+media_int_reg <- lm(formula = Website ~ Gender, data = media_int)
+
+summary(media_int_reg)
+export_summs(media_int_reg)
+```
+
+**Comments**
+
+    - Males are 6% less likely to access the Reign website compared to Females
+        - This is not statistically significant
+
+```{r}
+# attendance intentions
+attend_int_reg <- lm(formula = Attend17 ~ Clink1 + Starfir1 + Expsat1, data = attendance_int)
+
+summary(attend_int_reg)
+export_summs(attend_int_reg)
+```
+
+**Comments**
+
+    - The only thing we can statistically take away from this regression is that people dislike matches held at Starfire
+    - For every person that attends a match in 2017, people are 7% less likely to attend if the match is held at Starfire venue
+    - People are indifferent about Century Link - don't love it, don't hate it
+    - For every person that attends a match in 2017, people are 2% more likely to attend if the match is held at Memorial Stadium
+
+```{r}
+# merch intentions
+merch_int_reg <- lm(formula = Buymer1 ~ BuyMat1 + BuySpon1, data = merch_int)
+
+summary(merch_int_reg)
+export_summs(merch_int_reg)
+```
+
+**Comments**
+
+    - For every 1 unit of merch sold, people are 10% more likely to buy merch at the match
+    - For every 1 unit of merch sold, people are 24% more likely to buy merch from a sponsor
+    
+## Detailed EDA
+
+```{r}
+# media intentions
+grid.arrange(
+  q1 %>% 
+    mutate(Gamewit1 = as.factor(Gamewit1)) %>% 
+    ggplot(mapping = aes(x = Media12, y = Interest, color = Gender)) +
+    geom_point(position = "jitter", alpha = 0.5)
+)
+```
+
+**Comments**
+
+    - Females really appreciate the emails that they get from the Reign
+    - Media Consumption intentions: need to beef up social media strategy around Facebook, Twitter, Instagram. 
+        - Bad sign for social media campaigns when the Website gets the highest traffic. Other social media outlets are quite bare when it comes to activity. 
+
+```{r}
+# attendance intentions 
+grid.arrange(
+
+  q1 %>% 
+    ggplot(mapping = aes(x = Attend17, y = Gender)) + 
+    geom_point(position = "jitter"),
+  
+  q1 %>% 
+    ggplot(mapping = aes(x = Attend17, y = Ticket1)) + 
+    geom_point(position = "jitter"),
+  
+  q1 %>% 
+    ggplot(mapping = aes(x = Attend17, y = Expsat1)) + 
+    geom_point(position = "jitter"),
+  
+  q1 %>%   
+    ggplot(mapping = aes(x = Attend17, y = Clink1)) + 
+    geom_point(position = "jitter"),
+  
+  q1 %>%  
+    ggplot(mapping = aes(x = Attend17, y = Starfir1)) + 
+    geom_point(position = "jitter"),
+  
+    ncol = 2
+)
+
+```
+
+**Comments**
+
+    - Female community is highly likely to attend games next season
+    - If Ticket prices (Ticket1) stay reasonable, highly likely to attend games next season
+    - Seems like more people prefer Memorial Stadium (looking at Atten17=2 and Attend17=3 between Memorial and Century Link
+        - Less disgruntled people at Memorial stadium games
+    - Seems like heavy dislike for Starfire venue
+    
+**Questions**
+
++ I wonder what the proportions are for these numbers. Make a table to find out %
+
+```{r}
+# Attendance and Memorial
+q1 %>% 
+  tabyl(Attend17, Expsat1) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) 
+```
+
+```{r}
+# Attendance and Century Link
+q1 %>% 
+  tabyl(Clink1, Expsat1) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2) 
+```
+
+
+```{r}
+# Attendance and Starfire
+q1 %>% 
+  tabyl(Starfir1, Expsat1) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  adorn_percentages(denominator = "all") %>% # creates proportions
+  adorn_rounding(2)
+```
+
+**Comments**
+
+    - People clearly prefer Memorial Stadium for their gameday experience
+
+```{r}
+# merchandise intentions by gender - who wants to buy stuff?
+grid.arrange(
+  # Buymer1 on gender
+  merch_int %>% 
+    filter(str_detect(Gender, "ale")) %>% 
+    ggplot(mapping = aes(x = Buymer1, y = Gender)) + 
+    geom_point(position = "jitter"),
+  
+  merch_int %>% 
+    filter(str_detect(Gender, "ale")) %>% 
+    ggplot(mapping = aes(x = Buyonl1, y = Gender)) + 
+    geom_point(position = "jitter"),
+  
+  merch_int %>% 
+    filter(str_detect(Gender, "ale")) %>% 
+    ggplot(mapping = aes(x = BuyMat1, y = Gender)) + 
+    geom_point(position = "jitter"),
+  
+  merch_int %>%   
+    filter(str_detect(Gender, "ale")) %>% 
+    ggplot(mapping = aes(x = BuySpon1, y = Gender)) + 
+    geom_point(position = "jitter"),
+  
+  merch_int %>%  
+    ggplot(mapping = aes(x = Buymer1, y = Merimp20)) + 
+    geom_point(position = "jitter"),
+  
+    ncol = 2
+)
+
+```
+
+**Comments**
+
+    - Biggest intentions of purchasing merch next season come from Female fan base
+    - Seems like highest likelihood of purchasing merch is at the Match or from a Sponsor
+    
+```{r}
+# merchandise intentions by gender
+grid.arrange(
+  # Buymer1 on gender
+  q1 %>% 
+    ggplot(mapping = aes(x = Buymer1, y = Gamewit1)) + 
+    geom_point(position = "jitter"),
+  
+  q1 %>% 
+    ggplot(mapping = aes(x = Buymer1, y = Gamewit2)) + 
+    geom_point(position = "jitter"),
+  
+  q1 %>% 
+    ggplot(mapping = aes(x = Buymer1, y = Interest)) + 
+    geom_point(position = "jitter"),
+
+  q1 %>% 
+    ggplot(mapping = aes(x = BuyMat1, y = Interest)) + 
+    geom_point(position = "jitter"),
+  
+    ncol = 2
+)
+```
+
+**Comments**
+
+    - People are more likely to buy merch with higher interest in the team (this makes sense)
+    - Underwhelming amount of people intent on buying merch at the match with higher interest
+        - Perhaps because if they're highly interested in the team, they already have the merch that they want. Sports fans are superstitious and want to hang on to their "OG Gear"
+
 # Research Question 2: Determine the factors that impact satisfaction (Performance, Outcome, Matchday Satisfaction).
 
 ```{r}
@@ -1692,7 +1897,7 @@ grid.arrange(
 + How can Reign convince Male fans to adopt the brand and identify as Reign fans?
 
 
-## Statistical EDA: Research Question 3
+## Statistical EDA
 
 ```{r}
 # statistical analysis to support findings of Question 3
@@ -1712,6 +1917,64 @@ export_summs(brand_att_reg)
 
     - Reign being role models is statistically significant factor for brand pride
         - People want to be known as being associated with the Reign if the team serve as good role models. 
+        
+```{r}
+# visual for Q3
+# heatmap for q3
+
+cb_palette <- c("#cccccc", "#00aedb")
+
+q3_vis <- brand_att %>% 
+  group_by(BIRG1, RoleMod2) %>% 
+  summarize(count = n()) %>% 
+
+  ggplot(aes(BIRG1, RoleMod2)) + 
+  geom_tile(aes(fill = -count)) +  
+  scale_fill_distiller(palette = "RdPu") +
+  
+  #scale_x_continuous(breaks = c("Strongly Disagree", "Neutral", "Strongly Agree")) +
+  coord_flip() +
+  theme_classic() + 
+  theme(axis.line.x = element_blank(),
+        axis.line.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        legend.position = "none") + 
+  labs(x = "", 
+       y = "",
+       title = "Major support from people that believe Reign are role models",
+       subtitle = "Reign can have a positive impact to children and the community") + 
+  
+  # annotations
+  geom_text(data = data.frame(x = 3.45013154997636, y = -3.50221388195219, label = "Most Pride"),
+            mapping = aes(x = x, y = y, label = label),
+            hjust = 0L, colour = "#990066", fontface = 2, inherit.aes = FALSE) + 
+  
+  geom_text(data = data.frame(x = -2.06558111093393, y = -3.50221388195219, label = "Least Pride"),
+            mapping = aes(x = x, y = y, label = label),
+            hjust = 0L, colour = "#FFCCCC", fontface = 2, inherit.aes = FALSE) +
+  
+  geom_text(data = data.frame(x = -3.80993805601707, y = -3.09115165591085, label = "Bad Role Model"),
+            mapping = aes(x = x, y = y, label = label),
+            hjust = 0.4, colour = "#FFCCCC", fontface = 2, inherit.aes = FALSE) + 
+
+  geom_text(data = data.frame(x = -3.70922298458263, y = 2.94268974345045, label = "Great Role Model"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#990066", fontface = 2, inherit.aes = FALSE)
+
+q3_vis
+
+#ggannotate(q3_vis)
+  
+
+```
+
+**Comments**
+
+    - High correlation for people that agree the Reign are good role models to brand pride
+    - Suggestion: If Reign team are good role models to children, people will be proud to represent the Reign brand
 
 # Research Question 4: Investigate purchasing habits of corporate partner products. 
 
@@ -1871,8 +2134,6 @@ ncol = 4 )
 
 ## Base EDA Step 3: Multi-variate non-graphical
 
-+ Focus on Website traffic for now since this was the most popular form of social media 
-
 ```{r}
 # purchasing habits
 # Contingency/cross table - Website on Gender
@@ -1969,6 +2230,7 @@ grid.arrange(
 ```{r}
 # Tile graph heat map - need count
 q4 %>% 
+  filter(str_detect(Gender, "ale")) %>% 
   group_by(Spnbuy2, Gender) %>% 
   summarize(count = n()) %>% 
   ggplot(aes(Spnbuy2, Gender)) + 
@@ -1979,6 +2241,62 @@ q4 %>%
 
     - Females are mostly Neutral or not strongly influenced by Microsoft sponsorship
     - Males are slightly more influenced
+
+```{r}
+# proportion of counts
+
+q4_palette <- c("#990000", "#003366")
+
+q4_vis <- q4 %>% 
+  arrange(Spnbuy2) %>% 
+  mutate(Spnbuy2 = factor(Spnbuy2, levels = c(1, 2, 3, 4, 5, 6, 7))) %>% 
+  
+  mutate(across(starts_with('Spnbuy2'), function(x) as.character(x))) %>% 
+  mutate(Spnbuy2 = str_replace_all(Spnbuy2, "1", "Don't Care")) %>%
+  mutate(Spnbuy2 = str_replace_all(Spnbuy2, "2", "Some Negative Influence")) %>%
+  mutate(Spnbuy2 = str_replace_all(Spnbuy2, "3", "Little Negative Influence")) %>%
+  mutate(Spnbuy2 = str_replace_all(Spnbuy2, "4", "Neutral")) %>%
+  mutate(Spnbuy2 = str_replace_all(Spnbuy2, "5", "Little Influence")) %>%
+  mutate(Spnbuy2 = str_replace_all(Spnbuy2, "6", "Some Influence")) %>%
+  mutate(Spnbuy2 = str_replace_all(Spnbuy2, "7", "Heavy Influence")) %>%
+  
+  filter(str_detect(Gender, "ale")) %>%  
+  mutate(Gender = as.factor(Gender)) %>%
+  ggplot(mapping = aes(x = Spnbuy2, fill = Gender, na.rm = TRUE)) + 
+  geom_bar(position = "fill") + 
+  scale_fill_manual(values = q4_palette) + 
+
+  labs(x = "Microsoft", 
+       y = "Proportion", 
+       title = "Proportion of people willing to purchase from Microsoft",
+       subtitle = "Microsoft promotions will help drive support for Reign FC") + 
+  scale_y_continuous(labels = percent) +
+  scale_x_discrete(limits = c("Don't Care", "Some Negative Influence", "Little Negative Influence", "Neutral", "Little Influence", "Some Influence", "Heavy Influence")) +
+  
+  theme_classic() + 
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.line.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "top") + 
+  
+  coord_flip() + 
+  
+  geom_text(data = data.frame(x = 7.59688552520276, y = 0.165234896535759, label = "Male"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#003366", fontface = 2, inherit.aes = FALSE) + 
+  
+  geom_text(data = data.frame(x = 7.59688552520276, y = 0.584479429817643, label = "Female"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#990000", fontface = 2, inherit.aes = FALSE)
+
+  
+
+
+q4_vis
+#ggannotate(q4_vis)
+
+```
 
 ```{r}
 # visualize likert data
@@ -2276,7 +2594,7 @@ q5 %>%
 # Question 6 - Identify viable market segments
 
 q6 <- soccer_updates %>% 
-  select(ResponseId, Gender:Zipcode)
+  select(ResponseId, Gender:Zipcode, Interest)
 
 q6[, c(6:23)] <- sapply(q6[, c(6:23)], as.numeric)
 
@@ -2284,6 +2602,9 @@ q6[, c(6:23)] <- sapply(q6[, c(6:23)], as.numeric)
 
 ```{r}
 # join q4 and q6 together to create datasource for dashboard
+
+race_ord <- c("White", "Asian", "Black/African American", "Native Hawaiian/Pacific Islander", "American Indian/Alaska Native")
+sexorient_ord <- c("Gay/Lesbian", "Heterosexual", "Bisexual")
 
 # join q4 and q6 together
 dash_df <- left_join(q4, q6, by = "ResponseId")
@@ -2295,6 +2616,10 @@ dash_df <- dash_df %>%
          SexOrient = SexOrient.x,
          Race = Race.x, 
          Age = Age.x) %>% 
+  # filter validation lists
+  filter(str_detect(Gender, "ale")) %>% 
+  filter(Race %in% race_ord) %>% 
+  filter(SexOrient %in% sexorient_ord) %>% 
   # mutate things to NA so can drop them later
   mutate(Race = str_replace_all(Race, "3", "NA")) %>% 
   mutate(Purchs1 = str_replace_all(Purchs1, "I don't know", "NA")) %>% 
@@ -2309,6 +2634,7 @@ dash_df <- dash_df %>%
   mutate(Purchs10 = str_replace_all(Purchs10, "I don't know", "NA")) %>% 
   # drop NA's
   drop_na(Race) %>% 
+  drop_na(Gender) %>% 
   drop_na(Income) %>% 
   drop_na(Purchs1) %>% 
   drop_na(Purchs2) %>% 
@@ -2373,6 +2699,13 @@ dash_df <- dash_df %>%
   mutate(SeaEvnt7 = str_replace_all(SeaEvnt7, "1", "Yes")) %>% 
   mutate(SeaEvnt8 = str_replace_all(SeaEvnt8, "1", "Yes")) %>% 
   mutate(SeaEvnt9 = str_replace_all(SeaEvnt9, "1", "Yes")) %>% 
+  # change numbers to responses
+  mutate(across(starts_with('Interest'), function(x) as.character(x))) %>% 
+  mutate(Interest = str_replace_all(Interest, "1", "Small interest")) %>% 
+  mutate(Interest = str_replace_all(Interest, "2", "Low-level fan")) %>% 
+  mutate(Interest = str_replace_all(Interest, "3", "Moderate fan")) %>% 
+  mutate(Interest = str_replace_all(Interest, "4", "Loyal fan")) %>% 
+  mutate(Interest = str_replace_all(Interest, "5", "Diehard fan")) %>% 
   # rename so looks nice in dashboard
   rename(Storm = SeaEvnt1, 
          Seahawks = SeaEvnt2, 
@@ -2736,6 +3069,64 @@ q6 %>%
 + People must be soccer fans and not Seattle sports fans
 
 ```{r}
+# Use this for dashboard
+
+# load library
+library(tidyverse)
+
+# build viz
+cb_palette <- c("#cccccc", "#00aedb")
+
+q6_viz <- dash_df %>% 
+  #rename(Seahawks = SeaEvnt2, Sounders = SeaEvnt3, Mariners = SeaEvnt4) %>% 
+  group_by(Seahawks, Sounders, Mariners) %>% 
+  summarize(n = mean(n())) %>% 
+  gather(Questions, Response, -c(n))%>% 
+  mutate(Response = as.factor(Response)) %>% 
+  ggplot(mapping = aes(x = Questions, y = n, fill = Response, legend = "none")) + 
+  geom_bar(width = 0.75, stat = "identity", position = "stack") + 
+  scale_fill_manual(values = cb_palette) +
+  
+  guides(color = "none", labels = "none") +
+  theme_classic() +
+  
+  theme(axis.line.x = element_blank()) + 
+  theme(axis.line.y = element_blank()) + 
+  theme(axis.ticks.x = element_blank()) + 
+  theme(axis.ticks.y = element_blank()) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.text.x = element_blank()) +
+  theme(axis.title.y = element_blank()) +
+  theme(legend.position = "none") +
+  coord_flip() +
+
+  labs(title = "Popularity of Seattle teams among Reign FC fans",
+       subtitle = "Preference to soccer over other professional Seattle sport")
+
+  # Sounders annotation
+  #geom_text(data = data.frame(x = 3.05070491367154, y = 442.632326520993, label = "66%\nRespondents attended\nSounders game"),
+  #          mapping = aes(x = x, y = y, label = label),
+  #          hjust = 0L, fontface = 2, inherit.aes = FALSE) +
+
+  # Seahawks annotation
+  #geom_text(data = data.frame(x = 1.98876002893892, y = 168.09094647227, label = "20%\nRespondents attended\nSeahawks game"),
+  #          mapping = aes(x = x, y = y, label = label),
+  #          hjust = 0L, fontface = 2, inherit.aes = FALSE) +
+
+  # Mariners annotation  
+  #geom_text(data = data.frame(x = 1.08863531711793, y = 275.987118739357, label = "38%\nRespondents attended\nMariners game"),
+  #          mapping = aes(x = x, y = y, label = label),
+  #          hjust = 0L, fontface = 2, inherit.aes = FALSE)
+
+
+#ggannotate(q6_viz)
+  
+  q6_viz
+
+```
+
+
+```{r}
 q6 %>% 
   group_by(GameTim1, GameTim2, GameTim3) %>% 
   summarize(n = n()) %>% 
@@ -2755,7 +3146,7 @@ q6 %>%
     
 # Summary
 
-+ Research Question 1
+1. Research Question 1
 
     - Attendance Intentions: 
         - It seems that the best experience is had at Memorial Stadium
@@ -2778,7 +3169,7 @@ q6 %>%
     
     - REGRESSION summary: 
 
-+ Research Question 2
+2. Research Question 2
 
     - Performance Satisfaction: 
         - Performance Satisfaction is high (Satperf3)
@@ -2793,19 +3184,19 @@ q6 %>%
         - Overall experience at Memorial Stadium is high (Expsat1)
         - Friendliness of Arena Staff (Prsnsat1) and Security of Arena (Prsnsat2) are highly ranked
     
-+ Research Question 3
+3. Research Question 3
 
     - Having the players serve as good role models to children can help improve brand attitude (RoleMod2)
     - Need to brainstorm ways to get Males involved and proud of the brand
     - REGRESSION summary: 
 
-+ Research Question 4
+4. Research Question 4
 
     - Microsoft (Spnbuy2) seems to have the most influence out of the sponsors
     - BECU (Spnbuy4) comes in second after MSFT
     - Hardrock Café (Spnbuy6), Health Warrior (Spnbuy7), and Hyatt House (Spnbuy8) - doesn't influence purchasing habits by much
 
-+ Research Question 5
+5. Research Question 5
 
     - Consat2 - variety of food options - lots of negativity
     - Consat3 - Current concession offerings - lots of negativity
@@ -2813,7 +3204,7 @@ q6 %>%
     - Prsnsat1 - friendliness of arena staff is very well received
     - Focus improvement on Variety of food options and on Current concession offerings. These are negatively received aspects of the gameday experience
 
-+ Research Question 6
+6. Research Question 6
 
     - Reign fans also attend SeaEvnt3 (Sounders) and SeaEvnt4 (Mariners) events
     - Gametim1 -> Game Time 7 is the most popular (Sunday Evenings)
