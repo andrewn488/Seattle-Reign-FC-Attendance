@@ -153,7 +153,7 @@ attendance_int[, c(1:7)] <- sapply(attendance_int[, c(1:7)], as.numeric)
 # select and update variables that answer Media Consumption Intentions
 media_int <- q1 %>% 
   # select variables to answer the question
-  select(Media8_1:Media7b, Gender:Age) %>% 
+  select(Media8_1:Media7b, Gender:Age, Interest) %>% 
   # rename relevant variables
   rename(Website = Media8_1, Facebook = Media8_2, Twitter = Media8_3, Instagram = Media8_4, YouTube = Media8_5) %>%
   # change remaining "Media" variables to numeric
@@ -859,19 +859,6 @@ corrplot(media_int_corr,
          tl.col = "black")
 ```
 
-
-```{r}
-attend_int_corr <- attendance_int %>% 
-  select_if(is.numeric) %>%   # Use to select just the numeric variables
-  cor() %>% 
-  round(2) 
-
-attend_int_corr
-
-# use corrplot for correlation matrix
-corrplot(attend_int_corr)
-```
-
 **Comments**
 
     - Good hints to see correlation between variables
@@ -936,6 +923,65 @@ media_int %>%
 **Comments**
 
     - Most hits on website comes from Females, once a week
+    
+```{r}
+# media intentions
+
+q1_palette <- c("#999999", "#66CCFF", "#3399FF")
+
+q1_vis_wrangle <- media_int %>% 
+  select(Website:YouTube, Interest) %>% 
+  pivot_longer(cols = -c(Interest)) %>% 
+  group_by(name, Interest) %>% 
+  summarise(value = sum(value, na.rm = TRUE)) %>% 
+  group_by(Interest) %>% 
+  arrange(-value) %>% 
+  slice(2)
+  
+q1_vis <- q1_vis_wrangle %>% 
+  mutate(Interest = as.factor(Interest),
+         name = as.factor(name)) %>% 
+  ggplot(mapping = aes(x = Interest, y = value, fill = name)) + 
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = q1_palette) +
+  coord_flip() + 
+  theme_classic() + 
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(), 
+        legend.position = "none") +
+  labs(y = "Level of Interest in Reign FC", 
+       x = "Media Popularity",
+       title = "Top 3 media outlets for Reign FC") + 
+  
+  geom_text(data = data.frame(x = 4.99646068843984, y = 209.149655187183, label = "Facebook"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#3399FF", fontface = 2, inherit.aes = FALSE) +
+  
+  geom_text(data = data.frame(x = 4.63799768489595, y = 585.234940631178, label = "Facebook"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#3399FF", fontface = 2, inherit.aes = FALSE) +
+
+  
+  geom_text(data = data.frame(x = 2.01470024987025, y = 53.3602812815799, label = "Twitter"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#66CCFF", fontface = 2, inherit.aes = FALSE) + 
+  
+  geom_text(data = data.frame(x = 3.04120794183683, y = 226.189117958109, label = "Website"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#999999", fontface = 2, inherit.aes = FALSE) +
+  
+  geom_text(data = data.frame(x = 0.98, y = 54.5773857652174, label = "Website"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#999999", fontface = 2, inherit.aes = FALSE)
+
+q1_vis
+#ggannotate(q1_vis)
+
+# save to use in memo
+ggsave(filename = "q1_vis.png", plot = q1_vis)
+
+```
+
     
 ## Step 4.2: Quantitative
 
@@ -1336,11 +1382,11 @@ q2 <- soccer_updates %>%
   select(Skill2, Success2, Drama4, Aggress3, Satperf3,
          Interest, IDnattm1, IDcomm2, Escape1, Skill2, Success2, Drama4, Aggress3, Socint1, RoleMod2, Satout2, Satperf3,
          Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1, 
-         Matchsat:Consat5, Gender:Age)
+         Matchsat:Consat5, Gender:Age, Interest)
 
 # select and mutate variables that will answer Performance Satisfaction
 performance_sat <- q2 %>% 
-  select(c(1:5, Gender:Age)) 
+  select(c(1:5, Gender:Age, Interest)) 
 
 # change data to numeric
 performance_sat[, c(1:5)] <- sapply(performance_sat[, c(1:5)], as.numeric)
@@ -1695,6 +1741,70 @@ match_sat %>%
 
 + People seem to be satisfied with Matchday experience, yet not as satisfied for games at Memorial stadium
 
+## Detailed EDA
+
+```{r}
+# vis for q2
+q2_palette <- c("#0033FF", "#00aedb", "#99CCFF")
+
+filter_ord <- c(3, 4, 5) 
+
+q2_vis_wrangle <- performance_sat %>% 
+  filter(Interest %in% filter_ord) %>% 
+  select(Skill2:Satperf3, Interest) %>% 
+  pivot_longer(cols = -c(Interest)) %>% 
+  mutate(across(starts_with('Interest'), function(x) as.character(x))) %>% 
+  mutate(Interest = str_replace_all(Interest, "3", "Moderate Fan")) %>% 
+  mutate(Interest = str_replace_all(Interest, "4", "Loyal Fan")) %>% 
+  mutate(Interest = str_replace_all(Interest, "5", "Diehard Fan")) %>% 
+  group_by(name, Interest) %>% 
+  summarise(value = sum(value, na.rm = TRUE)) %>% 
+  group_by(Interest) %>% 
+  arrange(-value) %>% 
+  group_by(name, Interest) %>% 
+  summarise(mean_value = mean(value, na.rm = TRUE)) %>% 
+  mutate(name = str_replace_all(name, "Aggress3", "Aggressive\nPlay")) %>% 
+  mutate(name = str_replace_all(name, "Drama4", "Dramatic\nMatch")) %>% 
+  mutate(name = str_replace_all(name, "Satperf3", "Quality of\nPlay")) %>% 
+  mutate(name = str_replace_all(name, "Skill2", "Skillful\nPlay")) %>% 
+  mutate(name = str_replace_all(name, "Success2", "Team\nSuccess"))
+
+q2_vis <- q2_vis_wrangle %>% 
+  ggplot(mapping = aes(x = name, y = mean_value, fill = Interest)) +
+  geom_col(position = "dodge") + 
+  scale_fill_manual(values = q2_palette) + 
+  
+  labs(title = "Influences of satisfaction levels of Reign FC",
+       x = "Performance Attribute",
+       y = "Level of Satisfaction") + 
+  
+  theme_classic() + 
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        legend.position = "none") + 
+  
+  coord_flip() + 
+  
+  geom_text(data = data.frame(x = 5.36143251808494, y = 351.88240003669, label = "Moderate Fan"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#99CCFF", fontface = 2, inherit.aes = FALSE) + 
+  
+  geom_text(data = data.frame(x = 5.04565341722247, y = 820.821592619234, label = "Loyal Fan"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#00aedb", fontface = 2, inherit.aes = FALSE) + 
+  
+  geom_text(data = data.frame(x = 4.74844955758721, y = 245.077744074829, label = "Diehard Fan"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#0033FF", fontface = 2, inherit.aes = FALSE)
+
+q2_vis
+
+#ggannotate(q2_vis)
+
+ggsave(filename = "q2_vis.png", plot = q2_vis)
+
+```
 
 # Research Question 3: Determine ways to increase brand attitude.
 
@@ -2274,22 +2384,23 @@ q4_vis <- q4 %>%
         axis.ticks.y = element_blank(),
         axis.line.x = element_blank(),
         axis.ticks.x = element_blank(),
-        legend.position = "top") + 
+        legend.position = "top", 
+        ) + 
   
-  coord_flip() + 
+  coord_flip()
   
-  geom_text(data = data.frame(x = 7.59688552520276, y = 0.165234896535759, label = "Male"),
-            mapping = aes(x = x, y = y, label = label),
-            colour = "#003366", fontface = 2, inherit.aes = FALSE) + 
+  #geom_text(data = data.frame(x = 7.59688552520276, y = 0.165234896535759, label = "Male"),
+  #          mapping = aes(x = x, y = y, label = label),
+  #          colour = "#003366", fontface = 2, inherit.aes = FALSE) + 
   
-  geom_text(data = data.frame(x = 7.59688552520276, y = 0.584479429817643, label = "Female"),
-            mapping = aes(x = x, y = y, label = label),
-            colour = "#990000", fontface = 2, inherit.aes = FALSE)
+  #geom_text(data = data.frame(x = 7.59688552520276, y = 0.584479429817643, label = "Female"),
+  #          mapping = aes(x = x, y = y, label = label),
+  #          colour = "#990000", fontface = 2, inherit.aes = FALSE)
 
   
 
 
-q4_vis
+q4_vis + guides(fill = guide_legend(reverse=TRUE))
 #ggannotate(q4_vis)
 
 ```
@@ -2582,6 +2693,49 @@ q5 %>%
 **Questions**
 
 + What food options would people prefer to see offered at the game
+
+
+
+## Detailed EDA
+
+```{r}
+# heatmap of satisfaction with food options and gameday experience
+
+q5 <- soccer_updates %>% 
+  select(Matchsat:Consat7, Gender:Age)
+
+q5[, c(1:17)] <- sapply(q5[, c(1:17)], as.numeric)
+
+q5_vis <- q5 %>% 
+  filter(Consat2 > 0) %>% 
+  group_by(Consat2, Matchsat) %>% 
+  summarize(count = n()) %>% 
+  #mutate(toolt = paste0('Food variety satisfaction: ', Consat2,
+  #                      '\nGameday satisfaction: ', Matchsat, 
+  #                      '\nCount: ', count)) %>%
+  ggplot(aes(Consat2, Matchsat)) +
+  #geom_tile_interactive(aes(tooltip = toolt, fill = -count)) + 
+  geom_tile(aes(fill = -count)) + 
+  
+  theme_classic() + 
+  theme(axis.ticks.y = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        legend.position = "none", 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank()) + 
+  
+  labs(title = "Satisfaction in food options influence gameday experience",
+       x = "Food options satisfaction at the match", 
+       y = "Matchday satisfaction")
+
+# view the viz
+#ggiraph(ggobj = q5_vis)
+
+q5_vis
+
+  
+```
+
 
 
 # Research Question 6: Identify viable market segments
