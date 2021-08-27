@@ -861,19 +861,6 @@ corrplot(media_int_corr,
 
 
 ```{r}
-merch_int_corr <- merch_int %>% 
-  select_if(is.numeric) %>%   # Use to select just the numeric variables
-  cor() %>% 
-  round(2) 
-
-merch_int_corr
-
-# use corrplot for correlation matrix
-corrplot(merch_int_corr)
-```
-
-
-```{r}
 attend_int_corr <- attendance_int %>% 
   select_if(is.numeric) %>%   # Use to select just the numeric variables
   cor() %>% 
@@ -1239,7 +1226,9 @@ q1 %>%
   tabyl(Attend17, Expsat1) %>% 
   adorn_totals(where = c("row", "col")) %>% 
   adorn_percentages(denominator = "all") %>% # creates proportions
-  adorn_rounding(2) 
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
 ```
 
 ```{r}
@@ -1248,7 +1237,9 @@ q1 %>%
   tabyl(Clink1, Expsat1) %>% 
   adorn_totals(where = c("row", "col")) %>% 
   adorn_percentages(denominator = "all") %>% # creates proportions
-  adorn_rounding(2) 
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
 ```
 
 
@@ -1258,7 +1249,9 @@ q1 %>%
   tabyl(Starfir1, Expsat1) %>% 
   adorn_totals(where = c("row", "col")) %>% 
   adorn_percentages(denominator = "all") %>% # creates proportions
-  adorn_rounding(2)
+  adorn_rounding(2) %>%  # round decimals
+  kable() %>% 
+  kableExtra::kable_styling(bootstrap_options = "striped")
 ```
 
 **Comments**
@@ -1918,6 +1911,8 @@ export_summs(brand_att_reg)
     - Reign being role models is statistically significant factor for brand pride
         - People want to be known as being associated with the Reign if the team serve as good role models. 
         
+## Detailed EDA
+        
 ```{r}
 # visual for Q3
 # heatmap for q3
@@ -1975,6 +1970,7 @@ q3_vis
 
     - High correlation for people that agree the Reign are good role models to brand pride
     - Suggestion: If Reign team are good role models to children, people will be proud to represent the Reign brand
+
 
 # Research Question 4: Investigate purchasing habits of corporate partner products. 
 

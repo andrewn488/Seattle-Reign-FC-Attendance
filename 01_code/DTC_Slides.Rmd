@@ -1,0 +1,274 @@
+---
+title: "Influencing Reign FC brand attitude and gameday experience"
+author: Andrew Nalundasan
+date: August 27, 2021
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r echo = FALSE}
+# Course: OMSBA 5210
+# Purpose: DTC - Slides
+# Date: August 27, 2021
+# Author: Andrew Nalundasan
+```
+
+```{r echo = FALSE}
+# Clear environment of variables and functions
+rm(list = ls(all = TRUE)) 
+
+# NOTE, DO NOT CLEAR PACKAGES, IF YOU DO IT WILL NOT RUN
+```
+
+
+```{r message=FALSE, include=FALSE}
+
+library(ggannotate)    # annotation tool
+library(scales)        # to get $ and , on axis in graph
+library(tidyverse)     # contains ggplot2, dplyr, and several other packages
+library(vtable)        # NHK special
+library(gghighlight)   # visual formatting - highlights
+library(ggiraph)       # ggiraph
+```
+
+
+```{r include=FALSE}
+# read data into environment and assign to object
+soccer <- read_csv("../02_raw_data/Seattle_Reign.csv")
+
+# make updates to data here so can pull from cleaned data
+soccer_updates <- soccer %>% 
+  # transform Interest responses to numeric
+  mutate(Interest = str_replace_all(Interest, "I have a small amount of interest", "1")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I consider myself to be a low-level fan of this team", "2")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I consider myself to be a moderate fan of this team", "3")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I consider myself to be a loyal fan of this team", "4")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I live and die with this team", "5")) %>% 
+  # make Interest a factor
+  mutate(Interest = as.factor(Interest)) %>% 
+  # media variables
+  mutate(Media1 = str_sub(Media1, -2)) %>% 
+  mutate(Media3 = str_sub(Media3, -2)) %>%
+  mutate(Media4 = str_sub(Media4, -2)) %>%
+  mutate(Media5 = str_sub(Media5, -2)) %>%
+  mutate(Media6 = str_sub(Media6, -2)) %>%
+  mutate(Media12 = str_sub(Media12, -2)) %>%
+  mutate(Media7a = str_sub(Media7a, -2)) %>%
+  mutate(Media7b = str_sub(Media7b, -2)) %>% 
+  # sponsor variables
+  mutate(across(starts_with('Spnbuy'), function(x) str_sub(x, -1))) %>% 
+  mutate(across(starts_with('Spnbuy'), function(x) as.numeric(x))) %>% 
+  # grab last 2 characters of string and change class to numeric
+  mutate(Travel1 = str_sub(Travel1, -2)) %>%  
+  mutate(Travel1 = as.numeric(Travel1)) %>% 
+  mutate(Travel2 = str_sub(Travel2, -2)) %>%
+  mutate(Travel2 = as.numeric(Travel2)) %>% 
+  mutate(Travel3 = str_sub(Travel3, -2)) %>% 
+  mutate(Travel3 = as.numeric(Travel3)) %>% 
+  mutate(Seat1 = str_to_title(Seat1)) %>% 
+  # grab last 2 characters of Promo variables
+  mutate(across(starts_with('Promo'), function(x) str_sub(x, -2))) %>% 
+  mutate(across(starts_with('Promo'), function(x) as.numeric(x)))
+  
+# change all character responses to numeric scale to analyze as likert scale
+soccer_updates[soccer_updates == "Strongly disagree"] <- "-3"
+soccer_updates[soccer_updates == "Strongly Disagree"] <- "-3"
+soccer_updates[soccer_updates == "Disagree"] <- "-2"
+soccer_updates[soccer_updates == "Somewhat disagree"] <- "-1" 
+soccer_updates[soccer_updates == "Somewhat Disagree"] <- "-1" 
+soccer_updates[soccer_updates == "Neutral"] <- "0" 
+soccer_updates[soccer_updates == "Somewhat agree"] <- "1"
+soccer_updates[soccer_updates == "Somewhat Agree"] <- "1"
+soccer_updates[soccer_updates == "Agree"] <- "2" 
+soccer_updates[soccer_updates == "Strongly agree"] <- "3"
+soccer_updates[soccer_updates == "Strongly Agree"] <- "3"
+soccer_updates[soccer_updates == "Very Unimportant"] <- "1"
+soccer_updates[soccer_updates == "Very Important"] <- "7"
+soccer_updates[soccer_updates == "Prefer not to answer"] <- "Undisclosed"
+soccer_updates[soccer_updates == "Very Dissatisfied"] <- "1"
+soccer_updates[soccer_updates == "Very Satisfied"] <- "7"
+soccer_updates[soccer_updates == "Single"] <- "1"
+soccer_updates[soccer_updates == "Married/Partnered"] <- "2"
+soccer_updates[soccer_updates == "Some High School"] <- "1"
+soccer_updates[soccer_updates == "High School Graduate"] <- "2"
+soccer_updates[soccer_updates == "Some College"] <- "3"
+soccer_updates[soccer_updates == "College Graduate"] <- "4"
+soccer_updates[soccer_updates == "Graduate Degree"] <- "5"
+soccer_updates[soccer_updates == "Other"] <- "6"
+```
+
+```{r eval=FALSE, include=FALSE}
+
+# Full screen intro of MY FACE
+
+# Hello everyone. Thank you for this opportunity to present to you today. My name is Andrew Nalundasan, and I will be covering the findings from my recent analysis regarding potential methods of increasing brand attitude and enhancing gameday experience for the Reing FC. In this video, I will give a brief overview of the data set and the analyses performed, I will speak about the findings and recommendations that came out of the analyses, and I'll wrap it up with our key takeaways. 
+
+# Start sharing screen and begin presentation
+```
+
+
+Introduction
+===============================================
+
++ The Data:
+
+    + Survey distributed online via email list provided by Seattle Reign FC 
+    + 684 respondents
+    + Data has been anonymized - no privacy concerns for Reign FC fans
+
++ Insights into respondent behaviors and levels of satisfaction
+
+    + People are generally proud to be associated with the Reign
+    + People seem to prefer match day experience at Memorial Stadium
+        + Indifferent about Century Link 
+        + Negative sentiments for Starfire 
+        
+
+Team of good role models helps drive brand attitude
+===============================================
+
+<div style="float: left; width: 35%;">
+
++ Brand attitude was found to be highly correlated with sentiments about the Reign being good role models to children
+
++ Reign FC should have policy for team members to avoid the negative spotlight 
+
++ Cultivating a strong fanbase in today's children will lead to strong fanbase in the future
+
+</div>
+
+<div style="float: left; width: 65%;">
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# visual telling story about brand attitude
+
+# wrangle data
+q3 <- soccer_updates %>% 
+  select(Interest, BIRG1, RoleMod2, Posaff1, Negaff1, 
+         Gender:Age)
+
+q3[, c(1:5)] <- sapply(q3[, c(1:5)], as.numeric)
+
+brand_att <- q3 %>% 
+  filter(str_detect(Gender, "ale"))
+
+# build the viz
+cb_palette <- c("#cccccc", "#00aedb")
+
+q3_vis <- brand_att %>% 
+  group_by(BIRG1, RoleMod2) %>% 
+  summarize(count = n()) %>% 
+
+  ggplot(aes(BIRG1, RoleMod2)) + 
+  geom_tile_interactive(aes(fill = -count)) +  
+  scale_fill_distiller(palette = "RdPu") +
+  
+  #scale_x_continuous(breaks = c("Strongly Disagree", "Neutral", "Strongly Agree")) +
+  coord_flip() +
+  theme_classic() + 
+  theme(axis.line.x = element_blank(),
+        axis.line.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        legend.position = "none") + 
+  labs(x = "", 
+       y = "",
+       title = "Major support from people that believe Reign are role models",
+       subtitle = "Reign can have a positive impact to children and the community") + 
+  
+  # annotations
+  geom_text(data = data.frame(x = 3.45013154997636, y = -3.50221388195219, label = "Most Pride"),
+            mapping = aes(x = x, y = y, label = label),
+            hjust = 0L, colour = "#990066", fontface = 2, inherit.aes = FALSE) + 
+  
+  geom_text(data = data.frame(x = -2.06558111093393, y = -3.50221388195219, label = "Least Pride"),
+            mapping = aes(x = x, y = y, label = label),
+            hjust = 0L, colour = "#FFCCCC", fontface = 2, inherit.aes = FALSE) +
+  
+  geom_text(data = data.frame(x = -3.80993805601707, y = -3.09115165591085, label = "Bad Role Model"),
+            mapping = aes(x = x, y = y, label = label),
+            hjust = 0.4, colour = "#FFCCCC", fontface = 2, inherit.aes = FALSE) + 
+
+  geom_text(data = data.frame(x = -3.70922298458263, y = 2.94268974345045, label = "Great Role Model"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#990066", fontface = 2, inherit.aes = FALSE)
+
+ggiraph(ggobj = q3_vis)
+
+```
+
+
+</div>
+
+Food options help drive gameday experience
+===============================================
+
+<div style="float: left; width: 35%;">
+
++ Fans are more satisfied with more food options
+
++ Satisfaction in food variety influences gameday experience
+
++ Gameday experience can be enhanced with the right food options
+
++ Gameday experience at Memorial Stadium is preferred over Century Link and Starfire
+
+</div>
+
+<div style="float: left; width: 65%;">
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# improve gameday experience
+# wrangle data
+
+q5 <- soccer_updates %>% 
+  select(Matchsat:Consat7, Gender:Age)
+
+q5[, c(1:17)] <- sapply(q5[, c(1:17)], as.numeric)
+
+q5_vis <- q5 %>% 
+  filter(Consat2 > 0) %>% 
+  group_by(Consat2, Matchsat) %>% 
+  summarize(count = n()) %>% 
+  mutate(toolt = paste0('Food variety satisfaction: ', Consat2,
+                        '\nGameday satisfaction: ', Matchsat, 
+                        '\nCount: ', count)) %>%
+  ggplot(aes(Consat2, Matchsat)) +
+  geom_tile_interactive(aes(tooltip = toolt, fill = -count)) + 
+  
+  theme_classic() + 
+  theme(axis.ticks.y = element_blank(), 
+        axis.ticks.x = element_blank(), 
+        legend.position = "none", 
+        axis.text.x = element_blank(), 
+        axis.text.y = element_blank()) + 
+  
+  labs(title = "Satisfaction in food options influence gameday experience",
+       x = "Food options satisfaction at the match", 
+       y = "Matchday satisfaction")
+
+# view the viz
+ggiraph(ggobj = q5_vis)
+
+```
+
+</div>
+
+
+Key Takeaways
+===============================================
+
++ Robust data set of 684 survey respondents
+
++ The Reign players being good role models for kids is a strong driver in brand attitude
+
++ Having a wide range of food options can drive greater gameday experience
+
+
+Thank You
+===============================================
