@@ -1,0 +1,138 @@
+---
+output: html_document
+---
+
+#### **To: Seattle Reign FC**  
+  
+#### **From: Andrew Nalundasan**  
+  
+#### **Date: August 28, 2021**   
+  
+#### **RE: Impacts of fan satisfaction and gameday experience**  
+
+***
+
+```{r setup, include=FALSE}
+# Set chunk options for the file
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+# Course: OMSBA 5210
+# Purpose: Memo for DTC
+# Date: August 28, 2021
+# Author: Andrew Nalundasan
+```
+
+```{r}
+# load libraries
+library(tidyverse)
+
+# get $ formatting
+library(scales)
+```
+
+```{r}
+# read data into environment and assign to object
+soccer <- read_csv("../02_raw_data/Seattle_Reign.csv")
+
+# make updates to data here so can pull from cleaned data
+soccer_updates <- soccer %>% 
+  # transform Interest responses to numeric
+  mutate(Interest = str_replace_all(Interest, "I have a small amount of interest", "1")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I consider myself to be a low-level fan of this team", "2")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I consider myself to be a moderate fan of this team", "3")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I consider myself to be a loyal fan of this team", "4")) %>% 
+  mutate(Interest = str_replace_all(Interest, "I live and die with this team", "5")) %>% 
+  # make Interest a factor
+  mutate(Interest = as.factor(Interest)) %>% 
+  # media variables
+  mutate(Media1 = str_sub(Media1, -2)) %>% 
+  mutate(Media3 = str_sub(Media3, -2)) %>%
+  mutate(Media4 = str_sub(Media4, -2)) %>%
+  mutate(Media5 = str_sub(Media5, -2)) %>%
+  mutate(Media6 = str_sub(Media6, -2)) %>%
+  mutate(Media12 = str_sub(Media12, -2)) %>%
+  mutate(Media7a = str_sub(Media7a, -2)) %>%
+  mutate(Media7b = str_sub(Media7b, -2)) %>% 
+  # sponsor variables
+  mutate(across(starts_with('Spnbuy'), function(x) str_sub(x, -1))) %>% 
+  mutate(across(starts_with('Spnbuy'), function(x) as.numeric(x))) %>% 
+  # grab last 2 characters of string and change class to numeric
+  mutate(Travel1 = str_sub(Travel1, -2)) %>%  
+  mutate(Travel1 = as.numeric(Travel1)) %>% 
+  mutate(Travel2 = str_sub(Travel2, -2)) %>%
+  mutate(Travel2 = as.numeric(Travel2)) %>% 
+  mutate(Travel3 = str_sub(Travel3, -2)) %>% 
+  mutate(Travel3 = as.numeric(Travel3)) %>% 
+  mutate(Seat1 = str_to_title(Seat1)) %>% 
+  # grab last 2 characters of Promo variables
+  mutate(across(starts_with('Promo'), function(x) str_sub(x, -2))) %>% 
+  mutate(across(starts_with('Promo'), function(x) as.numeric(x)))
+  
+# change all character responses to numeric scale to analyze as likert scale
+soccer_updates[soccer_updates == "Strongly disagree"] <- "-3"
+soccer_updates[soccer_updates == "Strongly Disagree"] <- "-3"
+soccer_updates[soccer_updates == "Disagree"] <- "-2"
+soccer_updates[soccer_updates == "Somewhat disagree"] <- "-1" 
+soccer_updates[soccer_updates == "Somewhat Disagree"] <- "-1" 
+soccer_updates[soccer_updates == "Neutral"] <- "0" 
+soccer_updates[soccer_updates == "Somewhat agree"] <- "1"
+soccer_updates[soccer_updates == "Somewhat Agree"] <- "1"
+soccer_updates[soccer_updates == "Agree"] <- "2" 
+soccer_updates[soccer_updates == "Strongly agree"] <- "3"
+soccer_updates[soccer_updates == "Strongly Agree"] <- "3"
+soccer_updates[soccer_updates == "Very Unimportant"] <- "1"
+soccer_updates[soccer_updates == "Very Important"] <- "7"
+soccer_updates[soccer_updates == "Prefer not to answer"] <- "Undisclosed"
+soccer_updates[soccer_updates == "Very Dissatisfied"] <- "1"
+soccer_updates[soccer_updates == "Very Satisfied"] <- "7"
+soccer_updates[soccer_updates == "Single"] <- "1"
+soccer_updates[soccer_updates == "Married/Partnered"] <- "2"
+soccer_updates[soccer_updates == "Some High School"] <- "1"
+soccer_updates[soccer_updates == "High School Graduate"] <- "2"
+soccer_updates[soccer_updates == "Some College"] <- "3"
+soccer_updates[soccer_updates == "College Graduate"] <- "4"
+soccer_updates[soccer_updates == "Graduate Degree"] <- "5"
+soccer_updates[soccer_updates == "Other"] <- "6"
+```
+
+```{r}
+# make calculations to embed into the memo
+
+options(scipen = 100)    # remove scientific notation
+
+q2 <- soccer_updates %>% 
+  select(Skill2, Success2, Drama4, Aggress3, Satperf3,
+         Interest, IDnattm1, IDcomm2, Escape1, Skill2, Success2, Drama4, Aggress3, Socint1, RoleMod2, Satout2, Satperf3,
+         Cost3, Promo3:Promo6, Travel1:Travel3, Travel5, Travel6, Seat1, 
+         Matchsat:Consat5, Gender:Age, Interest)
+
+# median promo numbers
+q2_reg_perf <- lm(formula = Satperf3 ~ as.factor(Aggress3) + as.factor(Drama4) + as.factor(Skill2) , data = q2)
+
+# promo 0
+q2_num <- q2_reg_perf$coefficients[6]
+```
+
+
+The Seattle Reign FC (Reign) deserve to be recognized as a Seattle sports past time, similar to the Seahawks, Mariners, Storm, and Sounders. A decline in fan interest in the Reign was noticed in recent seasons, so a study was conducted to determine methods of encouraging interest to better support the organization. High profile players from the US Women's National Team (USWNT) like Hope Solo and Megan Rapinoe play for the Reign can be the face of the organization to garner interest from the Seattle community with the team. I was provided a sample of 684 survey responses that was distributed online through the mailing list provided by the Reign organization. The survey asked questions around past attendance behaviors, behavior intentions, psychographics, and demographics. The data used in this study was anonymized prior to analysis to ensure no risks of privacy invasion of our fanbase. This memo covers findings around fan satisfaction of the team and drivers of the fan's gameday experience. 
+
+Different attributes of gameplay influence the levels of satisfaction that our fans experience. The visual below depicts three different levels of our fanbase: Moderate Fans, Loyal Fans, and Diehard Fans. Attributes of gameplay analyzed consists of overall Team Success, Skillful play during the match, Quality of play during the match, the level of drama during the match, and Aggressive play during the match. It was found that people that identify as Loyal Fans of the Reign are consistently more satisfied with all aspects of gameplay across the board. Our Moderate fanbase are satisfied in most areas of play. Diehard Fans seem to be difficult to please, likely because they are so passionate about the team that they always want to win and feel less satisfication in the face of defeat. These game play attributes are difficult to control in any given match. The highest levels of satisfaction come from the "Loyal Fans" of the team. If more people could identify as loyal fans, levels of satisfaction would increase. 
+
+<br>
+
+![](q2_vis.png){height=700px, width=800px}
+
+It was found that the variety of food options was one of the main drivers of fans having a positive gameday expereince. The heatmap below depicts the level of gameday satisfaction mapped to fan's opinions of having a wide variety of food options at the game. The top right quadrant of the heatmap has the most consistently dark colors, indicating that the more variety of food options available at the match leads to higher gameday satisfaction. Focusing efforts on keeping our fans' stomachs and taste buds satisfied will drive positive gameday experiences. It's interesting that through the analysis of this data, something un-related to soccer can help influence the gameday experience. It could be a good idea to partner with local food trucks or local restaurants to provide food during Reign matches to garner more community involvement within Seattle, while simultaneously influencing a positive gameday experience. A future study focused on purchasing habits with corporate sponsors could be done to identify patterns in customer behavior that could help with this partnership strategy. 
+
+<br>
+
+![](q5_vis.png){height=700px, width=800px}
+
+
+The two findings discussed in this memo helped us to better understand the Reign fanbase. Loyal fans are satisfied with the Reign through the ups and downs of the given season, while Diehard fans are harder to please. The Reign's level of skill is the biggest driver of satisfaction while the quality of play has the least effect. It was interesting to find that a non-soccer related aspect of the gameday experience was so important to our fans. Having a wide variety of food options was found to be a main driver of the enjoyment of our fan's gameday experience. Ideas around engaging the local community to help boost gameday experience was discussed. Future studies can be done with similar data to dive further into the details of satisfaction with the Reign and enhancing gameday experience. If you have any questions about the research done, please feel free to reach out to our team. Our Technical Appendix with our complete analysis has been included with this submission.
+
+Best, 
+
+Andrew Nalundasan

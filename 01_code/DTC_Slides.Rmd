@@ -1,7 +1,7 @@
 ---
-title: "Influencing Reign FC brand attitude and gameday experience"
+title: "Influencing Reign FC social media consumption and brand attitude"
 author: Andrew Nalundasan
-date: August 27, 2021
+date: August 28, 2021
 output: slidy_presentation
 ---
 
@@ -121,11 +121,106 @@ Introduction
 
 + Insights into respondent behaviors and levels of satisfaction
 
-    + People are generally proud to be associated with the Reign
-    + People seem to prefer match day experience at Memorial Stadium
-        + Indifferent about Century Link 
-        + Negative sentiments for Starfire 
+    + People are proud to be associated with the Reign
+    + Especially true when the team are good role models to children
+    + Facebook is the preferred choice of social media when accessing Reign FC information
         
+
+Fans use Facebook to keep up with the Reign FC
+===============================================
+
+<div style="float: left; width: 35%;">
+
++ Fans prefer using Facebook to get Reign FC information
+
++ Website is being used
+
++ Reign FC presence on Twitter can be improved
+
++ Increasing social media activity should be made a priority
+
+</div>
+
+<div style="float: left; width: 65%;">
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+# media intentions
+# select variables that will answer research question 1
+q1 <- soccer_updates %>% 
+  select(Cost3, Clink1, Starfir1, Attend17, Seat1, Ticket1, Expsat1,
+         Media8_1:Media8_5, Media9, Media10, Media1:Media6, Media12, Media7a, Media7b,
+         Buymer1, Buyonl1, BuyMat1, BuyStor1, BuySpon1, Merimp20, Merimp22, Merimp24, 
+         Gender:Age, 
+         Interest, Gamewit1:Gamewit4)
+
+media_int <- q1 %>% 
+  # select variables to answer the question
+  select(Media8_1:Media7b, Gender:Age, Interest) %>% 
+  # rename relevant variables
+  rename(Website = Media8_1, Facebook = Media8_2, Twitter = Media8_3, Instagram = Media8_4, YouTube = Media8_5) %>%
+  # change remaining "Media" variables to numeric
+  mutate(across(starts_with("Media"), function(x) as.numeric(x)))
+
+# finding 1 visual
+
+q1_palette <- c("#999999", "#66CCFF", "#3399FF")
+
+q1_vis_wrangle <- media_int %>% 
+  select(Website:YouTube, Interest) %>% 
+  pivot_longer(cols = -c(Interest)) %>% 
+  group_by(name, Interest) %>% 
+  summarise(value = sum(value, na.rm = TRUE)) %>% 
+  group_by(Interest) %>% 
+  arrange(-value) %>% 
+  slice(2)
+  
+q1_vis <- q1_vis_wrangle %>% 
+  mutate(Interest = as.factor(Interest),
+         name = as.factor(name)) %>% 
+  ggplot(mapping = aes(x = Interest, y = value, fill = name)) + 
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = q1_palette) +
+  coord_flip() + 
+  theme_classic() + 
+  theme(axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(), 
+        legend.position = "none") +
+  labs(y = "Number of people accessing media", 
+       x = "Media Popularity",
+       title = "Top media outlets for Reign FC", 
+       subtitle = "Enhanced social media strategies will increase team pride") + 
+  
+  geom_text(data = data.frame(x = 4.99646068843984, y = 209.149655187183, label = "Facebook"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#3399FF", fontface = 2, inherit.aes = FALSE) +
+  
+  geom_text(data = data.frame(x = 4.63799768489595, y = 585.234940631178, label = "Facebook"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#3399FF", fontface = 2, inherit.aes = FALSE) +
+
+  
+  geom_text(data = data.frame(x = 2.01470024987025, y = 53.3602812815799, label = "Twitter"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#66CCFF", fontface = 2, inherit.aes = FALSE) + 
+  
+  geom_text(data = data.frame(x = 3.04120794183683, y = 226.189117958109, label = "Website"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#999999", fontface = 2, inherit.aes = FALSE) +
+  
+  geom_text(data = data.frame(x = 0.98, y = 54.5773857652174, label = "Website"),
+            mapping = aes(x = x, y = y, label = label),
+            colour = "#999999", fontface = 2, inherit.aes = FALSE)
+
+q1_vis
+# ggannotate(q1_vis)
+
+# save to use in memo
+# ggsave(filename = "q1_vis.png", plot = q1_vis)
+
+```
+
+
+</div>
 
 Team of good role models helps drive brand attitude
 ===============================================
@@ -135,6 +230,10 @@ Team of good role models helps drive brand attitude
 + Brand attitude was found to be highly correlated with sentiments about the Reign being good role models to children
 
 + Reign FC should have policy for team members to avoid the negative spotlight 
+
++ Fan support from parents will drive support from children
+
+    - Children are likely to be more active on social media
 
 + Cultivating a strong fanbase in today's children will lead to strong fanbase in the future
 
@@ -202,61 +301,6 @@ ggiraph(ggobj = q3_vis)
 
 ```
 
-
-</div>
-
-Food options help drive gameday experience
-===============================================
-
-<div style="float: left; width: 35%;">
-
-+ Fans are more satisfied with more food options
-
-+ Satisfaction in food variety influences gameday experience
-
-+ Gameday experience can be enhanced with the right food options
-
-+ Gameday experience at Memorial Stadium is preferred over Century Link and Starfire
-
-</div>
-
-<div style="float: left; width: 65%;">
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-# improve gameday experience
-# wrangle data
-
-q5 <- soccer_updates %>% 
-  select(Matchsat:Consat7, Gender:Age)
-
-q5[, c(1:17)] <- sapply(q5[, c(1:17)], as.numeric)
-
-q5_vis <- q5 %>% 
-  filter(Consat2 > 0) %>% 
-  group_by(Consat2, Matchsat) %>% 
-  summarize(count = n()) %>% 
-  mutate(toolt = paste0('Food variety satisfaction: ', Consat2,
-                        '\nGameday satisfaction: ', Matchsat, 
-                        '\nCount: ', count)) %>%
-  ggplot(aes(Consat2, Matchsat)) +
-  geom_tile_interactive(aes(tooltip = toolt, fill = -count)) + 
-  
-  theme_classic() + 
-  theme(axis.ticks.y = element_blank(), 
-        axis.ticks.x = element_blank(), 
-        legend.position = "none", 
-        axis.text.x = element_blank(), 
-        axis.text.y = element_blank()) + 
-  
-  labs(title = "Satisfaction in food options influence gameday experience",
-       x = "Food options satisfaction at the match", 
-       y = "Matchday satisfaction")
-
-# view the viz
-ggiraph(ggobj = q5_vis)
-
-```
-
 </div>
 
 
@@ -265,9 +309,16 @@ Key Takeaways
 
 + Robust data set of 684 survey respondents
 
++ Enhancing social media strategy could help garner interest in the team
+
++ Future study analyzing social media trends to verify increased interest in the team
+
 + The Reign players being good role models for kids is a strong driver in brand attitude
 
-+ Having a wide range of food options can drive greater gameday experience
++ Future study on merch sold in children's sizes to verify brand attitude
+
++ Support from parents will drive support from children, who are the ones that utilize social media outlets
+
 
 
 Thank You

@@ -1,7 +1,7 @@
 ---
 title: "Data Translation Challenge"
 author: "Andrew Nalundasan"
-date: "August 27, 2021"   
+date: "August 28, 2021"   
 output: 
   html_document:
     toc: true
@@ -158,12 +158,6 @@ media_int <- q1 %>%
   rename(Website = Media8_1, Facebook = Media8_2, Twitter = Media8_3, Instagram = Media8_4, YouTube = Media8_5) %>%
   # change remaining "Media" variables to numeric
   mutate(across(starts_with("Media"), function(x) as.numeric(x)))
-  
-# grouped dataset
-media_int_grouped <- media_int %>% 
-  pivot_longer(cols = -c(Gender:Age)) %>% 
-  group_by(name) %>% 
-  summarise(value = mean(value, na.rm = TRUE))
 ```
 
 ```{r}
@@ -1774,7 +1768,8 @@ q2_vis <- q2_vis_wrangle %>%
   geom_col(position = "dodge") + 
   scale_fill_manual(values = q2_palette) + 
   
-  labs(title = "Influences of satisfaction levels of Reign FC",
+  labs(title = "Characteristics of gameplay that impact satisfaction",
+       subtitle = "Loyal fans have highest levels of satisfaction",
        x = "Performance Attribute",
        y = "Level of Satisfaction") + 
   
@@ -1806,6 +1801,31 @@ ggsave(filename = "q2_vis.png", plot = q2_vis)
 
 ```
 
+## Statistical EDA
+
+```{r}
+q2_reg_perf <- lm(formula = Satperf3 ~ as.factor(Aggress3) + as.factor(Drama4) + as.factor(Skill2) , data = q2)
+
+q2_reg_success <- lm(formula = Success2 ~ as.factor(Aggress3) + as.factor(Drama4) + as.factor(Skill2) , data = q2)
+
+q2_reg_outcome <- lm(formula = Satout2 ~ as.factor(Aggress3) + as.factor(Drama4) + as.factor(Skill2) , data = q2)
+
+summary(q2_reg_perf)
+export_summs(q2_reg_perf)
+
+export_summs(q2_reg_success)
+
+export_summs(q2_reg_outcome)
+
+```
+
+**Comments**
+
+    - Higher performance satisfaction associated with more aggressive play
+    - Higher sense of success associated with more dramatic matches
+        - Lower sense of success associated with non-skillful play
+    - Outcome satisfaction doesn't seem to be driven by aggressive play, skilled play, or drama of the match
+    
 # Research Question 3: Determine ways to increase brand attitude.
 
 ```{r}
@@ -2731,7 +2751,8 @@ q5_vis <- q5 %>%
 # view the viz
 #ggiraph(ggobj = q5_vis)
 
-q5_vis
+# save to use in memo
+ggsave(filename = "q5_vis.png", plot = q5_vis)
 
   
 ```
@@ -3229,7 +3250,7 @@ cb_palette <- c("#cccccc", "#00aedb")
 
 q6_viz <- dash_df %>% 
   #rename(Seahawks = SeaEvnt2, Sounders = SeaEvnt3, Mariners = SeaEvnt4) %>% 
-  group_by(Seahawks, Sounders, Mariners) %>% 
+  group_by(Seahawks, Sounders, Storm, Mariners) %>% 
   summarize(n = mean(n())) %>% 
   gather(Questions, Response, -c(n))%>% 
   mutate(Response = as.factor(Response)) %>% 
@@ -3240,18 +3261,23 @@ q6_viz <- dash_df %>%
   guides(color = "none", labels = "none") +
   theme_classic() +
   
-  theme(axis.line.x = element_blank()) + 
-  theme(axis.line.y = element_blank()) + 
+  #theme(axis.line.x = element_blank()) + 
+  #theme(axis.line.y = element_blank()) + 
   theme(axis.ticks.x = element_blank()) + 
   theme(axis.ticks.y = element_blank()) +
-  theme(axis.title.x = element_blank()) +
+  #theme(axis.title.x = element_blank()) +
   theme(axis.text.x = element_blank()) +
-  theme(axis.title.y = element_blank()) +
-  theme(legend.position = "none") +
+  #theme(axis.title.y = element_blank()) +
+  theme(legend.position = "top") +
+  theme(legend.title = element_blank()) +
   coord_flip() +
 
-  labs(title = "Popularity of Seattle teams among Reign FC fans",
-       subtitle = "Preference to soccer over other professional Seattle sport")
+  labs(title = "Popularity of professional Seattle teams among Reign FC fans",
+       subtitle = "Joint promotion efforts will garner interest for Seattle sport", 
+       y = "Level of popularity",
+       x = "Professional Seattle Team") + 
+  
+  guides(fill = guide_legend(reverse=TRUE))
 
   # Sounders annotation
   #geom_text(data = data.frame(x = 3.05070491367154, y = 442.632326520993, label = "66%\nRespondents attended\nSounders game"),
@@ -3271,7 +3297,9 @@ q6_viz <- dash_df %>%
 
 #ggannotate(q6_viz)
   
-  q6_viz
+q6_viz
+
+ggsave(filename = "q6_viz.png", plot = q6_viz)
 
 ```
 
